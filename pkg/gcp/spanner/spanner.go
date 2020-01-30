@@ -15,7 +15,7 @@
  */
 
 // Package spanner contains the GCP Spanner Backend.
-package spanner // import "l7e.io/vanity/pkg/gcp"
+package spanner // import "l7e.io/vanity/pkg/gcp/spanner"
 
 import (
 	"context"

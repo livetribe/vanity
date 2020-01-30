@@ -15,7 +15,7 @@
  */
 
 // Package spanner contains the spanner sub-command.
-package spanner // import "l7e.io/vanity/cmd/vanity/backends/gcp/spanner"
+package spanner // import "l7e.io/vanity/cmd/vanity/cli/backends/gcp/spanner"
 
 import (
 	"context"

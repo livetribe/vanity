@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package spanner
+package spanner // import "l7e.io/vanity/pkg/gcp/spanner"
 
 import (
 	"cloud.google.com/go/spanner"

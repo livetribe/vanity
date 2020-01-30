@@ -15,7 +15,7 @@
  */
 
 // Package gcp declares common Google API clients options.
-package gcp // import "l7e.io/vanity/cmd/vanity/backends/gcp"
+package gcp // import "l7e.io/vanity/cmd/vanity/cli/backends/gcp"
 
 import (
 	"github.com/spf13/cobra"

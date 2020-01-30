@@ -16,7 +16,7 @@
  */
 
 // Package memory provides an in-memory implementation of Backend.
-package memory
+package memory // import "l7e.io/vanity/pkg/memory"
 
 import (
 	"context"

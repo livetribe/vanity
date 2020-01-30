@@ -15,7 +15,7 @@
  */
 
 // Package gcp contains common configuration options for GCP backends.
-package gcp
+package gcp // import "l7e.io/vanity/pkg/gcp"
 
 import (
 	"google.golang.org/api/option"

@@ -15,7 +15,7 @@
  */
 
 // Package datastore contains the GCP Datastore Backend.
-package datastore
+package datastore // import "l7e.io/vanity/pkg/gcp/datastore"
 
 import (
 	"context"

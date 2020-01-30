@@ -15,7 +15,7 @@
  */
 
 // Package cli contains the RootCmd for main and utilities for printing.
-package cli
+package cli // import "l7e.io/vanity/cmd/vanity/cli"
 
 import (
 	"github.com/spf13/cobra"

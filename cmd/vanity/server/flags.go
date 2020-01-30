@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package server // import "l7e.io/vanity/cmd/server"
+package server // import "l7e.io/vanity/cmd/vanity/server"
 
 import (
 	"fmt"
