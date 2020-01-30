@@ -104,15 +104,15 @@ func (s *spannerClient) Get(ctx context.Context, importPath string) (vcs, vcsPat
 		if spanner.ErrCode(err) == codes.NotFound {
 			return "", "", vanity.ErrNotFound
 		}
-		return "", "", fmt.Errorf("unable to retrieve record for %s: %w", importPath, err)
+		return "", "", fmt.Errorf(unableToRetrieve, importPath, err)
 	}
 
 	if err = row.ColumnByName(vcsColumn, &vcs); err != nil {
-		return "", "", fmt.Errorf("unable to extract vcs for %s: %w", importPath, err)
+		return "", "", fmt.Errorf(unableToExtractVcs, importPath, err)
 	}
 
 	if err = row.ColumnByName(vcsPathColumn, &vcsPath); err != nil {
-		return "", "", fmt.Errorf("unable to extract vcs_path for %s: %w", importPath, err)
+		return "", "", fmt.Errorf(unableToExtractVcsPath, importPath, err)
 	}
 
 	return vcs, vcsPath, err

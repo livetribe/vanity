@@ -58,13 +58,13 @@ var Command = &cobra.Command{
 
 		err := viper.BindPFlags(cmd.Flags())
 		if err != nil {
-			return fmt.Errorf("unable to bind viper to Command line flags: %w", err)
+			return fmt.Errorf(unableToBind, err)
 		}
 
 		beHelp := newHelper(cmd)
 		backend, err := beHelp.getBackend()
 		if err != nil {
-			return fmt.Errorf("unable to instantiate Datastore backend: %w", err)
+			return fmt.Errorf(unableToInstantiate, err)
 		}
 
 		backends.Backend = backend

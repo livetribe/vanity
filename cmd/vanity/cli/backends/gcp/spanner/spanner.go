@@ -57,13 +57,13 @@ var Command = &cobra.Command{
 		glog.V(log.Debug).Infoln("Set backend w/ spanner")
 		err := viper.BindPFlags(cmd.Flags())
 		if err != nil {
-			return fmt.Errorf("unable to bind viper to SPanCommand line flags: %w", err)
+			return fmt.Errorf(unableToBind, err)
 		}
 
 		beHelp := newHelper(cmd)
 		backend, err := beHelp.getBackend()
 		if err != nil {
-			return fmt.Errorf("unable to instantiate Spanner backend: %w", err)
+			return fmt.Errorf(unableToInstantiate, err)
 		}
 
 		backends.Backend = backend
