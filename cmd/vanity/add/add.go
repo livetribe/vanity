@@ -15,7 +15,7 @@
  */
 
 // Package add contains the add sub-command to add vanity URLs.
-package add // import "l7e.io/vanity/cmd/vanity/add"
+package add
 
 import (
 	"context"

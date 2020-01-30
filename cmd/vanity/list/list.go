@@ -15,7 +15,7 @@
  */
 
 // Package list contains the list sub-command to list vanity URLs.
-package list // import "l7e.io/vanity/cmd/vanity/list"
+package list
 
 import (
 	"context"

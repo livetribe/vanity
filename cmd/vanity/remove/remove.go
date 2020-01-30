@@ -15,7 +15,7 @@
  */
 
 // Package remove contains the remove sub-command to remove a vanity URL.
-package remove // import "l7e.io/vanity/cmd/vanity/remove"
+package remove
 
 import (
 	"context"

@@ -15,7 +15,7 @@
  */
 
 // Package datastore contains the datastore sub-command.
-package datastore // import "l7e.io/vanity/cmd/vanity/cli/backends/gcp/datastore"
+package datastore
 
 import (
 	"fmt"

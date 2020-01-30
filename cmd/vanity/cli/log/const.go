@@ -17,7 +17,7 @@
 /*
 Package log contains log level constants for glog.
 */
-package log // import "l7e.io/vanity/cmd/vanity/cli/log"
+package log
 
 const (
 	// Debug level for glog set to 1

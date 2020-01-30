@@ -15,7 +15,7 @@
  */
 
 // Package server contains the server sub-command to serve vanity URLs.
-package server // import "l7e.io/vanity/cmd/vanity/server"
+package server
 
 import (
 	"net/http"
