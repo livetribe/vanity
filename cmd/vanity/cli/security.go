@@ -12,19 +12,32 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-// Package cli contains the RootCmd for main and utilities for printing.
 package cli
 
 import (
-	"github.com/spf13/cobra"
+	"crypto/sha1" // nolint
+	"encoding/hex"
+	"fmt"
+
+	json "github.com/gibson042/canonicaljson-go"
 )
 
-// RootCmd is the root cobra command for vanity.
-var RootCmd = &cobra.Command{
-	Use:     "vanity",
-	Short:   "A go vanity server",
-	Long:    `A go vanity server`,
-	Version: getVersion(),
+// SHA1FromJSON generates a SHA1 hash from a canonical JSON object.
+func SHA1FromJSON(doc string) (string, error) {
+	var v interface{}
+	if err := json.Unmarshal([]byte(doc), &v); err != nil {
+		return "", fmt.Errorf("oi")
+	}
+	bytes, _ := json.Marshal(v)
+	sum := sha1.Sum(bytes) // nolint
+	return hex.EncodeToString(sum[0:]), nil
+}
+
+// SHA1FromString generates a SHA1 hash from a string.
+func SHA1FromString(s string) string {
+	sum := sha1.Sum([]byte(s)) // nolint
+	return hex.EncodeToString(sum[0:])
 }

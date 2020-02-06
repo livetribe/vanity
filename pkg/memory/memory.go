@@ -15,7 +15,6 @@
  *
  */
 
-// Package memory provides an in-memory implementation of Backend.
 package memory // import "l7e.io/vanity/pkg/memory"
 
 import (
@@ -30,7 +29,10 @@ type ConvenientBackend interface {
 	vanity.Backend
 
 	// AddEntry is a convenience method for adding a vanity URL configuration
-	// without having to deal with errors.
+	// without having to pass a context.Context instance and check for errors.
+	//
+	// Calling this method on a closed instance has no effect; the call is
+	// virtually ignored.
 	AddEntry(importPath, vcs, vcsPath string)
 }
 type inMemory struct {
@@ -49,6 +51,10 @@ func NewInMemoryAPI() ConvenientBackend {
 }
 
 func (s *inMemory) AddEntry(importPath, vcs, vcsPath string) {
+	if s.closed {
+		return
+	}
+
 	s.entries[importPath] = &entry{vcs: vcs, vcsPath: vcsPath}
 }
 
@@ -56,12 +62,14 @@ func (s *inMemory) Close() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 
+	s.entries = nil
 	s.closed = true
 
 	return nil
 }
 
 func (s *inMemory) check() error {
+	// must not hold a lock
 	if s.closed {
 		return vanity.ErrAlreadyClosed
 	}

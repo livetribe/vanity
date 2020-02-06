@@ -19,12 +19,137 @@ package memory
 
 import (
 	"context"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
+	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/assert"
 	"l7e.io/vanity"
 )
+
+func TestInMemoryAPI(t *testing.T) {
+
+	Convey("Ensure get obtains entry from AddEntry", t, func() {
+		be := NewInMemoryAPI()
+		be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
+
+		vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
+		So(err, ShouldBeNil)
+		So(vcs, ShouldEqual, "git")
+		So(vcsPath, ShouldEqual, "https://github.com/livetribe/vanity")
+	})
+
+	Convey("Ensure get returns error for unknown entry", t, func() {
+		be := NewInMemoryAPI()
+
+		vcs, vcsPath, err := be.Get(context.Background(), "foo")
+		So(vcs, ShouldBeEmpty)
+		So(vcsPath, ShouldBeEmpty)
+		So(err, ShouldBeError, vanity.ErrNotFound)
+	})
+
+	Convey("Ensure get obtains entry from Add", t, func() {
+		be := NewInMemoryAPI()
+
+		err := be.Add(context.Background(), "l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
+		So(err, ShouldBeNil)
+
+		vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
+		So(err, ShouldBeNil)
+		So(vcs, ShouldEqual, "git")
+		So(vcsPath, ShouldEqual, "https://github.com/livetribe/vanity")
+	})
+
+	Convey("Ensure Remove works properly", t, func() {
+		be := NewInMemoryAPI()
+		be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
+
+		err := be.Remove(context.Background(), "l7e.io/vanity")
+		So(err, ShouldBeNil)
+
+		vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
+		So(vcs, ShouldBeEmpty)
+		So(vcsPath, ShouldBeEmpty)
+		So(err, ShouldBeError, vanity.ErrNotFound)
+
+		err = be.Remove(context.Background(), "l7e.io/vanity")
+		So(err, ShouldBeError, vanity.ErrNotFound)
+	})
+
+	Convey("Ensure Remove non-existing entry returns an error", t, func() {
+		be := NewInMemoryAPI()
+
+		err := be.Remove(context.Background(), "foo")
+		So(err, ShouldBeError, vanity.ErrNotFound)
+	})
+
+	Convey("Ensure close always returns nil", t, func() {
+		be := NewInMemoryAPI()
+		err := be.Close()
+
+		So(err, ShouldBeNil)
+
+		err = be.Close()
+
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Ensure always healthy", t, func() {
+		be := NewInMemoryAPI()
+		err := be.Healthz(context.Background())
+
+		So(err, ShouldBeNil)
+	})
+
+	Convey("Ensure List obtains all entries from AddEntry", t, func() {
+		be := NewInMemoryAPI()
+		be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
+		be.AddEntry("m4o.io/pbf", "git", "https://github.com/magurl/pbf")
+
+		entries := make(map[string]*entry)
+		err := be.List(context.Background(),
+			vanity.ConsumerFunc(func(_ context.Context, importPath, vcs, vcsPath string) {
+				entries[importPath] = &entry{vcs: vcs, vcsPath: vcsPath}
+			}))
+		So(err, ShouldBeNil)
+		So(*entries["l7e.io/vanity"], ShouldResemble, entry{"git", "https://github.com/livetribe/vanity"})
+		So(*entries["m4o.io/pbf"], ShouldResemble, entry{"git", "https://github.com/magurl/pbf"})
+	})
+
+	Convey("Ensure List can be canceled", t, func() {
+		be := NewInMemoryAPI()
+		be.AddEntry("a", "va", "vaPath")
+		be.AddEntry("b", "vb", "vbPath")
+		be.AddEntry("c", "vc", "vcPath")
+
+		start := &sync.WaitGroup{}
+		start.Add(1) //nolint
+		end := &sync.WaitGroup{}
+		end.Add(1) //nolint
+
+		ctx, cancel := context.WithCancel(context.Background())
+
+		go func() {
+			start.Wait()
+			cancel()
+			end.Done()
+		}()
+
+		err := be.List(ctx,
+			vanity.ConsumerFunc(func(_ context.Context, importPath, vcs, vcsPath string) {
+				start.Done()
+
+				So(importPath, ShouldNotBeEmpty)
+				So(vcs, ShouldEqual, fmt.Sprintf("v%s", importPath))
+				So(vcsPath, ShouldEqual, fmt.Sprintf("v%sPath", importPath))
+
+				end.Wait()
+			}))
+		So(err, ShouldEqual, context.Canceled)
+	})
+}
 
 func TestInMemory_AddEntry(t *testing.T) {
 	be := NewInMemoryAPI()
@@ -52,45 +177,6 @@ func TestInMemory_Close(t *testing.T) {
 
 	err = be.List(context.Background(), vanity.ConsumerFunc(func(_ context.Context, _, _, _ string) {}))
 	assert.Equal(t, err, vanity.ErrAlreadyClosed)
-}
-
-func TestInMemory_Get(t *testing.T) {
-	be := NewInMemoryAPI()
-
-	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
-	vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
-	assert.NoError(t, err)
-	assert.Equal(t, "git", vcs)
-	assert.Equal(t, "https://github.com/livetribe/vanity", vcsPath)
-
-	_, _, err = be.Get(context.Background(), "foo")
-	assert.Equal(t, err, vanity.ErrNotFound)
-}
-
-func TestInMemory_Add(t *testing.T) {
-	be := NewInMemoryAPI()
-
-	err := be.Add(context.Background(), "l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
-	assert.NoError(t, err)
-
-	vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
-	assert.NoError(t, err)
-	assert.Equal(t, "git", vcs)
-	assert.Equal(t, "https://github.com/livetribe/vanity", vcsPath)
-}
-
-func TestInMemory_Remove(t *testing.T) {
-	be := NewInMemoryAPI()
-	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
-
-	err := be.Remove(context.Background(), "l7e.io/vanity")
-	assert.NoError(t, err)
-
-	_, _, err = be.Get(context.Background(), "l7e.io/vanity")
-	assert.Equal(t, err, vanity.ErrNotFound)
-
-	err = be.Remove(context.Background(), "l7e.io/vanity")
-	assert.Equal(t, err, vanity.ErrNotFound)
 }
 
 func TestInMemory_List(t *testing.T) {

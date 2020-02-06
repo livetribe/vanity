@@ -12,12 +12,12 @@ Go vanity server
 - VCS is Version Control System (such as 'git')
 - Repo root is the root path the source code repository (such as 'https://github.com/livetribe')
 - Domain is the internet address where the Go Vanity server is hosted (such as
-  m4o.io or l7e.io). Domain is deduced from HTTP request.
-- Path is the path component of the Go package (such as /cmd/tcpproxy in
-  kkn.fi/cmd/tcpproxy)
+  `m4o.io` or `l7e.io`). Domain is deduced from HTTP request.
+- Path is the path component of the Go package (such as `/cmd/tcpproxy` in
+  `kkn.fi/cmd/tcpproxy`)
 
 ## Features
-- Redirects browsers to pkg.go.dev, configurable to godoc.org
+- Redirects browsers to `pkg.go.dev`, configurable to `godoc.org`
 - Redirects Go tool to VCS
 - Redirects HTTP to HTTPS
 - Configurable logger which is fully compatible with standard log package.

@@ -43,6 +43,14 @@ func init() { //nolint:gochecknoinits
 	vanity.SetLogger(vanity.LoggerFunc(func(format string, v ...interface{}) {
 		glog.Errorf(format, v...)
 	}))
+
+	viper.SetEnvPrefix("vanity")
+	viper.SetConfigType("toml")
+	viper.SetConfigName("config")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+
+	viper.AddConfigPath("/etc/vanity/")
+	viper.AddConfigPath("$HOME/.config/vanity")
 }
 
 func main() {
@@ -58,13 +66,6 @@ func main() {
 }
 
 func setupViper() error {
-	viper.SetEnvPrefix("vanity")
-	viper.SetConfigType("toml")
-	viper.SetConfigName("config")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	viper.AddConfigPath("/etc/vanity/")
-	viper.AddConfigPath("$HOME/.config/vanity")
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()

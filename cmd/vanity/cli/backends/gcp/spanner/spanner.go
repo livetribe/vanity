@@ -23,7 +23,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli"
@@ -42,6 +41,8 @@ func init() { //nolint:gochecknoinits
 
 	flags := Command.PersistentFlags()
 	flags.StringP(database, "", "", "Spanner database connection string")
+	_ = viper.BindPFlag(database, flags.Lookup(database))
+	_ = viper.BindEnv(database)
 
 	gcp.InitFlags(Command)
 
@@ -80,7 +81,7 @@ var Command = &cobra.Command{
 }
 
 type helper struct {
-	*pflag.FlagSet
+	*cli.FlagSet
 
 	gh *gcp.Helper
 }
@@ -88,34 +89,30 @@ type helper struct {
 // newHelper wraps the Cobra command's flags with a utility wrapper to assist in
 // the creation of a Spanner-based backend.
 func newHelper(cmd *cobra.Command) *helper {
-	return &helper{FlagSet: cmd.Flags(), gh: gcp.NewHelper(cmd)}
-}
-
-// getDatabase obtains the Spanner database connection string; the project,
-// instance and optionally database to use. The format is
-// projects/{project}/instances/{instance}/databases/{database}, with the
-// databases/{database} part being optional.
-func (h *helper) getDatabase() (db string, found bool) {
-	db = viper.GetString(database)
-	return db, db != ""
+	return &helper{FlagSet: cli.Flags(cmd), gh: gcp.NewHelper(cmd)}
 }
 
 // getBackend returns a Spanner-based api.Backend instance, configured by the helper.
 func (h *helper) getBackend() (vanity.Backend, error) {
-	db, found := h.getDatabase()
-	if !found {
-		return nil, fmt.Errorf("unable to obtain database connection string")
+	db, ok := h.GetValue(database)
+	if !ok {
+		return nil, fmt.Errorf("unable to get database")
 	}
-
 	glog.V(log.Debug).Infof("database: %s", db)
 
-	options := h.getClientOptions()
+	options, err := h.getClientOptions()
+	if err != nil {
+		return nil, err
+	}
 
 	return be.NewClient(context.Background(), db, options...)
 }
 
-func (h *helper) getClientOptions() []be.BackendOption {
-	co := h.gh.GetClientOptions()
+func (h *helper) getClientOptions() ([]be.BackendOption, error) {
+	co, err := h.gh.GetClientOptions()
+	if err != nil {
+		return nil, err
+	}
 
-	return []be.BackendOption{be.WithClientOptions(co)}
+	return []be.BackendOption{be.WithClientOptions(co)}, nil
 }

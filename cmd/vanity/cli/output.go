@@ -25,28 +25,28 @@ import (
 )
 
 // NewPlainConsumer creates a Consumer that prints vanity URL configurations
-// to standard output as plain comma-delimited text.
+// to standard output as plainConsumer comma-delimited text.
 func NewPlainConsumer() vanity.Consumer {
-	return plain{}
+	return plainConsumer{}
 }
 
 // NewJSONConsumer creates a Consumer that prints vanity URL configurations
 // to standard output as a JSON object.
 func NewJSONConsumer() vanity.Consumer {
-	return &json{first: true}
+	return &jsonConsumer{first: true}
 }
 
-type plain struct{}
+type plainConsumer struct{}
 
-func (p plain) OnEntry(_ context.Context, importPath, vcs, vcsPath string) {
+func (p plainConsumer) OnEntry(_ context.Context, importPath, vcs, vcsPath string) {
 	fmt.Printf("%s,%s,%s\n", importPath, vcs, vcsPath)
 }
 
-type json struct {
+type jsonConsumer struct {
 	first bool
 }
 
-func (j *json) OnEntry(_ context.Context, importPath, vcs, vcsPath string) {
+func (j *jsonConsumer) OnEntry(_ context.Context, importPath, vcs, vcsPath string) {
 	if j.first {
 		j.first = false
 	} else {

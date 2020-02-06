@@ -18,10 +18,16 @@
 package gcp
 
 import (
+	"encoding/base64"
+	"fmt"
+
+	"github.com/golang/glog"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
+	"l7e.io/vanity/cmd/vanity/cli"
+	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
 const (
@@ -35,63 +41,91 @@ func InitFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
 	flags.StringP(apiKey, "", "", "API key to be used as the basis for authentication (optional)")
 	flags.StringP(credentialsFile, "", "", "service account or refresh token JSON credentials file (optional)")
-	flags.StringP(credentialsJSON, "", "", "service account or refresh token JSON credentials (optional)")
+	flags.StringP(credentialsJSON, "", "", "service account or refresh token JSON credentials in base64 (optional)")
+
+	viper.RegisterAlias(apiKey, "google-api.key")
+	viper.RegisterAlias(credentialsFile, "google-api."+credentialsFile)
+	viper.RegisterAlias(credentialsJSON, "google-api."+credentialsJSON)
 }
 
 // Helper provides convenient access to the Google API Cobra flags.
 type Helper struct {
-	*pflag.FlagSet
+	*cli.FlagSet
 }
 
 // NewHelper wraps the Cobra command's flags with a utility wrapper to assist in
 // the collection of Google API client options.
 func NewHelper(cmd *cobra.Command) *Helper {
-	return &Helper{cmd.Flags()}
+	return &Helper{cli.Flags(cmd)}
 }
 
 // GetClientOptions obtains the Google API client options.
-func (h *Helper) GetClientOptions() []option.ClientOption {
+func (h *Helper) GetClientOptions() ([]option.ClientOption, error) {
 	var co []option.ClientOption
 
 	co = h.CollectAPIKeyOption(co)
-	co = h.CollectCredentialsFileOption(co)
-	co = h.CollectCredentialsOption(co)
+	co, err := h.CollectCredentialsFileOption(co)
+	if err != nil {
+		return nil, err
+	}
+	co, err = h.CollectCredentialsOption(co)
+	if err != nil {
+		return nil, err
+	}
 
-	return co
+	return co, nil
 }
 
 // CollectAPIKeyOption adds the Google API key, if passed as a command flag, to
 // the Google API client options.
 func (h *Helper) CollectAPIKeyOption(options []option.ClientOption) []option.ClientOption {
-	key := viper.GetString(apiKey)
-
-	if key == "" {
+	key, found := h.GetValue(apiKey)
+	if !found {
 		return options
 	}
+
+	glog.V(log.Debug).Infof("Google API key (sha1): %s", cli.SHA1FromString(key))
 
 	return append(options, option.WithAPIKey(key))
 }
 
 // CollectCredentialsFileOption adds the Google credentials file, if passed as
 // a command flag, to the Google API client options.
-func (h *Helper) CollectCredentialsFileOption(options []option.ClientOption) []option.ClientOption {
-	cf := viper.GetString(credentialsFile)
-
-	if cf == "" {
-		return options
+func (h *Helper) CollectCredentialsFileOption(options []option.ClientOption) ([]option.ClientOption, error) {
+	cf, found := h.GetValue(credentialsFile)
+	if !found {
+		return options, nil
 	}
 
-	return append(options, option.WithCredentialsFile(cf))
+	if !cli.FileExists(cf) {
+		return options, fmt.Errorf("file %s does not exist", cf)
+	}
+
+	glog.V(log.Debug).Infof("Google API credentials file: %s", cf)
+
+	return append(options, option.WithCredentialsFile(cf)), nil
 }
 
 // CollectCredentialsOption adds the Google credentials, if passed as a
 // command flag, to the Google API client options.
-func (h *Helper) CollectCredentialsOption(options []option.ClientOption) []option.ClientOption {
-	cj := viper.GetString(credentialsJSON)
-
-	if cj == "" {
-		return options
+func (h *Helper) CollectCredentialsOption(options []option.ClientOption) ([]option.ClientOption, error) {
+	b64, found := h.GetValue(credentialsJSON)
+	if !found {
+		return options, nil
 	}
 
-	return append(options, option.WithCredentialsJSON([]byte(cj)))
+	cj, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, errors.Wrapf(err, "invalid base64 encoding of %s", credentialsJSON)
+	}
+
+	// if cj is not valid JSON, this function will fail
+	sha1, err := cli.SHA1FromJSON(string(cj))
+	if err != nil {
+		return nil, err
+	}
+
+	glog.V(log.Debug).Infof("Google API credentials (sha1): %s", sha1)
+
+	return append(options, option.WithCredentialsJSON(cj)), nil
 }

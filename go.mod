@@ -5,8 +5,11 @@ go 1.13
 require (
 	cloud.google.com/go/datastore v1.0.0
 	cloud.google.com/go/spanner v1.1.0
+	github.com/ahmetb/govvv v0.2.1-0.20171102043829-eeed55f64b03 // indirect
+	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.3.2
+	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.3.0
 	github.com/smartystreets/goconvey v1.6.4
 	github.com/spf13/cobra v0.0.5

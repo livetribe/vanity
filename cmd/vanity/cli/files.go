@@ -12,19 +12,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-// Package cli contains the RootCmd for main and utilities for printing.
 package cli
 
-import (
-	"github.com/spf13/cobra"
-)
+import "os"
 
-// RootCmd is the root cobra command for vanity.
-var RootCmd = &cobra.Command{
-	Use:     "vanity",
-	Short:   "A go vanity server",
-	Long:    `A go vanity server`,
-	Version: getVersion(),
+// FileExists returns true if the file exists, false otherwise.
+func FileExists(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }

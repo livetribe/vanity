@@ -22,7 +22,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli"
@@ -41,6 +40,8 @@ func init() { //nolint:gochecknoinits
 
 	flags := Command.PersistentFlags()
 	flags.StringP(projectID, "", "", "GCP project hosting datastore")
+	_ = viper.BindPFlag(projectID, flags.Lookup(projectID))
+	_ = viper.BindEnv(projectID)
 
 	gcp.InitFlags(Command)
 
@@ -80,7 +81,7 @@ var Command = &cobra.Command{
 }
 
 type helper struct {
-	*pflag.FlagSet
+	*cli.FlagSet
 
 	gh *gcp.Helper
 }
@@ -88,13 +89,12 @@ type helper struct {
 // newHelper wraps the Cobra command's flags with a utility wrapper to assist in
 // the creation of a Datastore-based backend.
 func newHelper(cmd *cobra.Command) *helper {
-	return &helper{FlagSet: cmd.Flags(), gh: gcp.NewHelper(cmd)}
+	return &helper{FlagSet: cli.Flags(cmd), gh: gcp.NewHelper(cmd)}
 }
 
 // getProjectID obtains the GCP project hosting datastore.
 func (h *helper) getProjectID() (id string, found bool) {
-	id = viper.GetString(projectID)
-	return id, id != ""
+	return h.GetValue(projectID)
 }
 
 // getBackend returns a Datastore-based api.Backend instance, configured by the
@@ -107,5 +107,10 @@ func (h *helper) getBackend() (vanity.Backend, error) {
 		glog.Infof("project id: %s", id)
 	}
 
-	return be.NewClient(id, h.gh.GetClientOptions()...)
+	options, err := h.gh.GetClientOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	return be.NewClient(id, options...)
 }

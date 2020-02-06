@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/*
-Package vanity contains an HTTP Handler that provides go vanity URL support.
-*/
 package vanity // import "l7e.io/vanity"
 
 import (
