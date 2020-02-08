@@ -31,7 +31,7 @@ import (
 func newHandlerCheck(backend vanity.Backend, kind string) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			ctx, _ := context.WithDeadline(r.Context(), time.Now().Add(5 * time.Second)) // nolint
+			ctx, _ := context.WithTimeout(r.Context(), 5*time.Second) // nolint
 			err := backend.Healthz(ctx)
 			if err != nil {
 				glog.Error(err)

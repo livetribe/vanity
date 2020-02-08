@@ -96,9 +96,9 @@ type Handler struct {
 	// DocURL is the base URL browsers are redirected to - default is https://pkg.go.dev/
 	DocURL string
 
-	// Deadline is the deadline for the calls to the backend implementation.
-	// Default is two seconds.
-	Deadline time.Time
+	// Duration is the timeout duration for the calls to the backend implementation.
+	// Default is five seconds.
+	Duration time.Duration
 }
 
 // NewVanityHandler creates a new http.Handler that services vanity URLs using api
@@ -107,7 +107,7 @@ func NewVanityHandler(api Backend) http.Handler {
 	return &Handler{
 		api:      api,
 		DocURL:   DefaultDocURL,
-		Deadline: time.Now().Add(5 * time.Second), // nolint
+		Duration: 5 * time.Second, // nolint
 	}
 }
 
@@ -143,7 +143,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	apiCalls.Inc()
 
-	ctx, _ := context.WithDeadline(r.Context(), s.Deadline) // nolint
+	ctx, _ := context.WithTimeout(r.Context(), s.Duration) // nolint
 
 	importPath := host(r) + r.URL.Path
 
@@ -163,7 +163,6 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
 
 	vcsRoot := repoRoot + r.URL.Path
 
