@@ -24,8 +24,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
 const (
@@ -105,11 +107,13 @@ func NewVanityHandler(api Backend) http.Handler {
 	return &Handler{
 		api:      api,
 		DocURL:   DefaultDocURL,
-		Deadline: time.Now().Add(2 * time.Second), // nolint
+		Deadline: time.Now().Add(5 * time.Second), // nolint
 	}
 }
 
 func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	glog.V(log.Trace).Infof("User-Agent: %s", r.UserAgent())
+
 	// tell Google LB everything is fine
 	if r.UserAgent() == gceIngressUserAgent {
 		w.WriteHeader(http.StatusOK)
@@ -123,12 +127,16 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		url.Host = host(r)
 		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
 
+		glog.V(log.Trace).Info("Redirecting to https")
+
 		return
 	}
 
 	if r.Method != http.MethodGet {
 		status := http.StatusMethodNotAllowed
 		http.Error(w, http.StatusText(status), status)
+
+		glog.V(log.Trace).Infof("%s HTTP method not allowed", r.Method)
 
 		return
 	}
@@ -139,9 +147,12 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	importPath := host(r) + r.URL.Path
 
+	glog.V(log.Trace).Infof("importPath: %s", importPath)
+
 	vcs, repoRoot, err := s.timedGet(ctx, importPath)
 	if err != nil {
 		if err == ErrNotFound {
+			glog.Warningf("%s not found", importPath)
 			apiNotFound.Inc()
 			http.NotFound(w, r)
 		} else {
@@ -153,7 +164,11 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+
 	vcsRoot := repoRoot + r.URL.Path
+
+	glog.V(log.Trace).Infof("vcsRoot: %s", vcsRoot)
+
 	if r.FormValue("go-get") != "1" {
 		apiDocRedirects.Inc()
 		url := "https://pkg.go.dev/" + importPath
