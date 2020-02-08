@@ -41,17 +41,17 @@ const (
 )
 
 type data struct {
-	importRoot string
-	vcs        string
-	vcsRoot    string
+	ImportRoot string
+	VCS        string
+	VCSRoot    string
 }
 
 var tmpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <meta name="go-import" content="{{.importRoot}} {{.vcs}} {{.vcsRoot}}">
-  <meta name="go-source" content="{{.importRoot}} {{.vcsRoot}} {{.vcsRoot}}/tree/master{/dir} {{.vcsRoot}}/blob/master{/dir}/{file}#L{line}">
+  <meta name="go-import" content="{{.ImportRoot}} {{.VCS}} {{.VCSRoot}}">
+  <meta name="go-source" content="{{.ImportRoot}} {{.VCSRoot}} {{.VCSRoot}}/tree/master{/dir} {{.VCSRoot}}/blob/master{/dir}/{file}#L{line}">
 </head>
 </html>
 `))
@@ -230,9 +230,9 @@ func host(r *http.Request) string {
 func templatize(importRoot, vcs, vcsRoot string) (body []byte, err error) {
 	logger.Printf("%s %s %s", importRoot, vcs, vcsRoot)
 	d := &data{
-		importRoot: importRoot,
-		vcs:        vcs,
-		vcsRoot:    vcsRoot,
+		ImportRoot: importRoot,
+		VCS:        vcs,
+		VCSRoot:    vcsRoot,
 	}
 	var buf bytes.Buffer
 	err = tmpl.Execute(&buf, d)
