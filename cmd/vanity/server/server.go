@@ -91,5 +91,5 @@ func serverCmd(cmd *cobra.Command, _ []string) {
 	if err = watcher.Wait(); err != nil {
 		glog.Warningf("Shutdown error: %s", err)
 	}
-	glog.Info("Escutcheon exited")
+	glog.Info("Vanity exited")
 }
