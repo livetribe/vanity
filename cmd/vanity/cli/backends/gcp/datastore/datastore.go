@@ -23,6 +23,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli"
 	"l7e.io/vanity/cmd/vanity/cli/backends"
@@ -51,8 +52,8 @@ func init() { //nolint:gochecknoinits
 // Command is the vanity sub-command for a GCP Datastore backend.
 var Command = &cobra.Command{
 	Use:   "datastore",
-	Short: "Use GCP Datastore for a backend vanity store",
-	Long:  "Use GCP Datastore for a backend vanity store",
+	Short: "Use GCP Datastore backend for a vanity store",
+	Long:  "Use GCP Datastore backend for a vanity store",
 	Args:  cobra.NoArgs,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		glog.V(log.Debug).Infoln("Set backend w/ datastore")
@@ -66,6 +67,11 @@ var Command = &cobra.Command{
 		backend, err := beHelp.getBackend()
 		if err != nil {
 			return fmt.Errorf(unableToInstantiate, err)
+		}
+
+		err = beHelp.gh.AddInterceptors()
+		if err != nil {
+			return err
 		}
 
 		backends.Backend = backend

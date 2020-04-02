@@ -18,16 +18,16 @@ package vanity // import "l7e.io/vanity"
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"io"
 )
 
 var (
 	// ErrAlreadyClosed is returned if a Backend implementation is already closed.
-	ErrAlreadyClosed = errors.New("already closed")
+	ErrAlreadyClosed = fmt.Errorf("already closed")
 
-	// ErrNotFound is returned if the import path cannot be found.
-	ErrNotFound = errors.New("not found")
+	// ErrNotFound is returned if the import path cannot MockBackend found.
+	ErrNotFound = fmt.Errorf("not found")
 )
 
 // Backend implementations provide access to a vanity URL store.
@@ -75,6 +75,10 @@ var (
 	// log is error log.
 	logger Logger
 )
+
+func init() {
+	logger = LoggerFunc(func(format string, v ...interface{}) {})
+}
 
 // Logger describes functions available for logging purposes.
 type Logger interface {

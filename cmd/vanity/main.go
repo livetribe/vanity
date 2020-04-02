@@ -23,6 +23,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
 	"l7e.io/vanity"
 
 	_ "l7e.io/vanity/cmd/vanity/add"

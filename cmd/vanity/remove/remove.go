@@ -22,6 +22,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+
 	"l7e.io/vanity/cmd/vanity/cli/backends"
 	"l7e.io/vanity/cmd/vanity/cli/backends/helpers"
 	"l7e.io/vanity/cmd/vanity/cli/log"
@@ -34,18 +35,20 @@ func init() { //nolint:gochecknoinits
 			Short: "Remove vanity URL",
 			Long:  "Remove vanity URL",
 			Args:  cobra.ExactArgs(1), // nolint
-			Run: func(cmd *cobra.Command, args []string) {
-				importPath := args[0]
-
-				glog.V(log.Debug).Infof("Removing %s...", importPath)
-
-				err := backends.Backend.Remove(context.Background(), importPath)
-				if err != nil {
-					glog.Exitf("Unable to remove %s: %s", importPath, err)
-				}
-
-				glog.V(log.Debug).Info("Removed")
-			},
+			Run:   removeCmd,
 		}
 	})
+}
+
+func removeCmd(_ *cobra.Command, args []string) {
+	importPath := args[0]
+
+	glog.V(log.Debug).Infof("Removing %s...", importPath)
+
+	err := backends.Backend.Remove(context.Background(), importPath)
+	if err != nil {
+		glog.Exitf("Unable to remove %s: %s", importPath, err)
+	}
+
+	glog.V(log.Debug).Info("Removed")
 }

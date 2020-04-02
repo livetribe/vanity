@@ -14,136 +14,44 @@
  * limitations under the License.
  */
 
-package vanity_test
+package vanity
 
 import (
 	"context"
 	"fmt"
-	"sync"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
-	"l7e.io/vanity"
-	"l7e.io/vanity/pkg/memory"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestInMemoryAPI(t *testing.T) {
-	Convey("Ensure get obtains entry from AddEntry", t, func() {
-		api := memory.NewInMemoryAPI()
-		api.AddEntry("a", "va", "vaPath")
-
-		vcs, vcsPath, err := api.Get(context.Background(), "a")
-		So(err, ShouldBeNil)
-		So(vcs, ShouldEqual, "va")
-		So(vcsPath, ShouldEqual, "vaPath")
+func TestConsumerFunc(t *testing.T) {
+	var ip, v, vp string
+	c := ConsumerFunc(func(context context.Context, importPath, vcs, vcsPath string) {
+		ip = importPath
+		v = vcs
+		vp = vcsPath
 	})
 
-	Convey("Ensure get returns error for unknown entry", t, func() {
-		api := memory.NewInMemoryAPI()
+	c.OnEntry(context.Background(), "a", "b", "c")
 
-		vcs, vcsPath, err := api.Get(context.Background(), "foo")
-		So(vcs, ShouldBeEmpty)
-		So(vcsPath, ShouldBeEmpty)
-		So(err, ShouldEqual, vanity.ErrNotFound)
+	assert.Equal(t, "a", ip)
+	assert.Equal(t, "b", v)
+	assert.Equal(t, "c", vp)
+}
+
+func TestSetLogger(t *testing.T) {
+	var record string
+
+	logger.Printf("%s%s%s", "a", "b", "c")
+
+	assert.Equal(t, "", record)
+
+	l := LoggerFunc(func(format string, z ...interface{}) {
+		record = fmt.Sprintf(format, z...)
 	})
+	SetLogger(l)
 
-	Convey("Ensure get obtains entry from Add", t, func() {
-		api := memory.NewInMemoryAPI()
+	logger.Printf("%s%s%s", "a", "b", "c")
 
-		err := api.Add(context.Background(), "a", "va", "vaPath")
-		So(err, ShouldBeNil)
-
-		vcs, vcsPath, err := api.Get(context.Background(), "a")
-		So(err, ShouldBeNil)
-		So(vcs, ShouldEqual, "va")
-		So(vcsPath, ShouldEqual, "vaPath")
-	})
-
-	Convey("Ensure Remove works properly", t, func() {
-		api := memory.NewInMemoryAPI()
-		api.AddEntry("a", "va", "vaPath")
-
-		err := api.Remove(context.Background(), "a")
-		So(err, ShouldBeNil)
-
-		vcs, vcsPath, err := api.Get(context.Background(), "a")
-		So(vcs, ShouldBeEmpty)
-		So(vcsPath, ShouldBeEmpty)
-		So(err, ShouldEqual, vanity.ErrNotFound)
-	})
-
-	Convey("Ensure Remove non-existing entry returns an error", t, func() {
-		api := memory.NewInMemoryAPI()
-
-		err := api.Remove(context.Background(), "foo")
-		So(err, ShouldEqual, vanity.ErrNotFound)
-	})
-
-	Convey("Ensure close always returns nil", t, func() {
-		api := memory.NewInMemoryAPI()
-		err := api.Close()
-
-		So(err, ShouldBeNil)
-
-		err = api.Close()
-
-		So(err, ShouldBeNil)
-	})
-
-	Convey("Ensure always healthy", t, func() {
-		api := memory.NewInMemoryAPI()
-		err := api.Healthz(context.Background())
-
-		So(err, ShouldBeNil)
-	})
-
-	Convey("Ensure List obtains all entries from AddEntry", t, func() {
-		api := memory.NewInMemoryAPI()
-		api.AddEntry("a", "va", "vaPath")
-		api.AddEntry("b", "vb", "vbPath")
-		api.AddEntry("c", "vc", "vcPath")
-
-		count := 0
-		err := api.List(context.Background(),
-			vanity.ConsumerFunc(func(_ context.Context, importPath, vcs, vcsPath string) {
-				count++
-				So(importPath, ShouldNotBeEmpty)
-				So(vcs, ShouldEqual, fmt.Sprintf("v%s", importPath))
-				So(vcsPath, ShouldEqual, fmt.Sprintf("v%sPath", importPath))
-			}))
-		So(err, ShouldBeNil)
-		So(count, ShouldEqual, 3)
-	})
-
-	Convey("Ensure List can be canceled", t, func() {
-		api := memory.NewInMemoryAPI()
-		api.AddEntry("a", "va", "vaPath")
-		api.AddEntry("b", "vb", "vbPath")
-		api.AddEntry("c", "vc", "vcPath")
-
-		start := &sync.WaitGroup{}
-		start.Add(1) //nolint
-		end := &sync.WaitGroup{}
-		end.Add(1) //nolint
-
-		ctx, cancel := context.WithCancel(context.Background())
-
-		go func() {
-			start.Wait()
-			cancel()
-			end.Done()
-		}()
-
-		err := api.List(ctx,
-			vanity.ConsumerFunc(func(_ context.Context, importPath, vcs, vcsPath string) {
-				start.Done()
-
-				So(importPath, ShouldNotBeEmpty)
-				So(vcs, ShouldEqual, fmt.Sprintf("v%s", importPath))
-				So(vcsPath, ShouldEqual, fmt.Sprintf("v%sPath", importPath))
-
-				end.Wait()
-			}))
-		So(err, ShouldEqual, context.Canceled)
-	})
+	assert.Equal(t, "abc", record)
 }

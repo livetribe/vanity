@@ -16,7 +16,7 @@
  */
 
 /*
-Package vanity contains an HTTP Handler that provides go vanity URLZ support.
+Package vanity contains an HTTP Handler that provides go vanity URL support.
 
 See https://cloud.google.com/spanner/docs/getting-started/go/ for an
 introduction to Cloud Spanner and additional help on using this API.
@@ -40,4 +40,4 @@ of interest:
 Remember to close the client after use to free up the sessions in the session
 pool.
 */
-package vanity
+package vanity  // import "l7e.io/vanity"

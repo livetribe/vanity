@@ -25,8 +25,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli/backends/helpers"
+	"l7e.io/vanity/cmd/vanity/server/interceptors"
 )
 
 func init() { //nolint:gochecknoinits
@@ -80,7 +82,7 @@ func (h *helper) getHTTPServer(api vanity.Backend) *http.Server {
 	glog.Infof("port configured to listen to %s", addr)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", vanity.NewVanityHandler(api))
+	mux.Handle("/", interceptors.WrapHandler(vanity.NewVanityHandler(api)))
 
 	return &http.Server{Addr: addr, Handler: mux}
 }

@@ -45,9 +45,6 @@ func (f *FlagSet) GetValue(flagName string) (value string, found bool) {
 	if err == nil && len(value) > 0 {
 		return value, true
 	}
-	if len(value) > 0 {
-		return value, true
-	}
 
 	v := viper.Get(flagName)
 	if v == nil {

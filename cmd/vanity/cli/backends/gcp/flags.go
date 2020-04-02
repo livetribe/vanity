@@ -26,11 +26,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
+
 	"l7e.io/vanity/cmd/vanity/cli"
 	"l7e.io/vanity/cmd/vanity/cli/log"
+	"l7e.io/vanity/cmd/vanity/server/interceptors"
+	"l7e.io/vanity/pkg/gcp"
 )
 
 const (
+	glbHCKey        = "glb-healthcheck"
 	apiKey          = "api-key"
 	credentialsFile = "credentials-file"
 	credentialsJSON = "credentials-json"
@@ -39,6 +43,7 @@ const (
 // InitFlags initializes the Cobra command with flags common to Google API clients.
 func InitFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
+	flags.BoolP(glbHCKey, "", true, "Add Google load balancer health-check interceptor")
 	flags.StringP(apiKey, "", "", "API key to be used as the basis for authentication (optional)")
 	flags.StringP(credentialsFile, "", "", "service account or refresh token JSON credentials file (optional)")
 	flags.StringP(credentialsJSON, "", "", "service account or refresh token JSON credentials in base64 (optional)")
@@ -57,6 +62,21 @@ type Helper struct {
 // the collection of Google API client options.
 func NewHelper(cmd *cobra.Command) *Helper {
 	return &Helper{cli.Flags(cmd)}
+}
+
+// AddInterceptors will register interceptors which handle Google load balancer
+// user agent checks for a GCE ingress agent.
+func (h *Helper) AddInterceptors() error {
+	glb, err := h.GetBool(glbHCKey)
+	if err != nil {
+		return err
+	}
+
+	if glb {
+		interceptors.RegisterInterceptor(gcp.GLB)
+		glog.V(log.Debug).Info("Added GLB interceptor")
+	}
+	return nil
 }
 
 // GetClientOptions obtains the Google API client options.

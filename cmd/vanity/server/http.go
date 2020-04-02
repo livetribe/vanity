@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli/log"
 )

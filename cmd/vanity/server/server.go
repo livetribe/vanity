@@ -25,8 +25,9 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"l7e.io/vanity/cmd/vanity/cli/backends"
 	"l7e.io/yama"
+
+	"l7e.io/vanity/cmd/vanity/cli/backends"
 )
 
 func serverCmd(cmd *cobra.Command, _ []string) {

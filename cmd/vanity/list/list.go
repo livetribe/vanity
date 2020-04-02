@@ -24,6 +24,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli"
 	"l7e.io/vanity/cmd/vanity/cli/backends"

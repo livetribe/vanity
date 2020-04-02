@@ -21,7 +21,6 @@ import (
 	"context"
 	"html/template"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,12 +28,11 @@ import (
 )
 
 const (
-	gceIngressUserAgent = "GoogleHC/1.0"
-	xForwardedHost      = "X-Forwarded-Host"
-	xForwardedProto     = "X-Forwarded-Proto"
+	xForwardedHost  = "X-Forwarded-Host"
+	xForwardedProto = "X-Forwarded-Proto"
 
 	// DefaultDocURL is the default Go doc URL.
-	// It can be replaced with https://https://godoc.org/.
+	// It can MockBackend replaced with https://https://godoc.org/.
 	DefaultDocURL = "https://pkg.go.dev/"
 )
 
@@ -55,34 +53,52 @@ var tmpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 `))
 
 var (
-	apiCalls = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "vanity_api_calls_total",
-		Help: "The total vanity Backend calls",
+	// APICalls is a Prometheus counter that tracks the total vanity Backend calls.
+	APICalls = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "vanity",
+		Subsystem: "api",
+		Name:      "calls_total",
+		Help:      "The total vanity Backend calls",
 	})
 
-	apiErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "vanity_api_errors_total",
-		Help: "The total vanity Backend errors",
+	// APIErrors is a Prometheus counter that tracks the total vanity Backend errors.
+	APIErrors = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "vanity",
+		Subsystem: "api",
+		Name:      "errors_total",
+		Help:      "The total vanity Backend errors",
 	})
 
-	apiNotFound = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "vanity_api_not_found_total",
-		Help: "The total vanity Backend not found calls",
+	// APINotFound is a Prometheus counter that tracks the total vanity Backend not found calls.
+	APINotFound = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "vanity",
+		Subsystem: "api",
+		Name:      "not_found_total",
+		Help:      "The total vanity Backend not found calls",
 	})
 
-	apiDocRedirects = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "vanity_api_doc_total",
-		Help: "The total vanity Backend doc redirects",
+	// APIDocRedirects is a Prometheus counter that tracks the total vanity Backend doc redirects.
+	APIDocRedirects = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "vanity",
+		Subsystem: "api",
+		Name:      "doc_total",
+		Help:      "The total vanity Backend doc redirects",
 	})
 
-	apiErrTemplates = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "vanity_api_error_templates_total",
-		Help: "The total templating errors",
+	// APIErrTemplates is a Prometheus counter that tracks the total templating errors.
+	APIErrTemplates = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "vanity",
+		Subsystem: "api",
+		Name:      "error_templates_total",
+		Help:      "The total templating errors",
 	})
 
-	summaryVec = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name: "vanity_api_duration_seconds",
-		Help: "The Backend duration in seconds",
+	// SummaryVec is a Prometheus histogram to track the Backend duration in seconds.
+	SummaryVec = promauto.NewHistogram(prometheus.HistogramOpts{
+		Namespace: "vanity",
+		Subsystem: "api",
+		Name:      "duration_seconds",
+		Help:      "The Backend duration in seconds",
 	})
 )
 
@@ -111,13 +127,6 @@ func NewVanityHandler(api Backend) http.Handler {
 
 func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	// tell Google LB everything is fine
-	if r.UserAgent() == gceIngressUserAgent {
-		w.WriteHeader(http.StatusOK)
-
-		return
-	}
-
 	if !isHTTPS(r) {
 		url := *r.URL
 		url.Scheme = "https"
@@ -134,7 +143,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiCalls.Inc()
+	APICalls.Inc()
 
 	ctx, _ := context.WithTimeout(r.Context(), s.Duration) // nolint
 
@@ -143,11 +152,11 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vcs, repoRoot, err := s.timedGet(ctx, importPath)
 	if err != nil {
 		if err == ErrNotFound {
-			apiNotFound.Inc()
+			APINotFound.Inc()
 			http.NotFound(w, r)
 		} else {
 			logger.Printf("Unable to get %s: %s", importPath, err)
-			apiErrors.Inc()
+			APIErrors.Inc()
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -157,7 +166,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vcsRoot := repoRoot + r.URL.Path
 
 	if r.FormValue("go-get") != "1" {
-		apiDocRedirects.Inc()
+		APIDocRedirects.Inc()
 		url := "https://pkg.go.dev/" + importPath
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 
@@ -167,7 +176,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	body, err := templatize(importPath, vcs, vcsRoot)
 	if err != nil {
 		logger.Printf("Unable to templatize %s: %s", importPath, err)
-		apiErrTemplates.Inc()
+		APIErrTemplates.Inc()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
@@ -183,7 +192,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *Handler) timedGet(ctx context.Context, importPath string) (vcs, vcsPath string, err error) {
 	start := time.Now()
-	defer summaryVec.Observe(time.Since(start).Seconds())
+	defer SummaryVec.Observe(time.Since(start).Seconds())
 
 	vcs, vcsPath, err = s.api.Get(ctx, importPath)
 
@@ -192,9 +201,6 @@ func (s *Handler) timedGet(ctx context.Context, importPath string) (vcs, vcsPath
 
 func isHTTPS(r *http.Request) bool {
 	if r.URL.Scheme == "https" {
-		return true
-	}
-	if strings.HasPrefix(r.Proto, "HTTPS") {
 		return true
 	}
 	if r.Header.Get(xForwardedProto) == "https" {

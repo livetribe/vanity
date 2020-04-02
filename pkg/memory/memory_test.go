@@ -26,6 +26,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 	"github.com/stretchr/testify/assert"
+
 	"l7e.io/vanity"
 )
 
@@ -165,6 +166,8 @@ func TestInMemory_Close(t *testing.T) {
 	be := NewInMemoryAPI()
 	assert.NoError(t, be.Close())
 	assert.NoError(t, be.Close())
+
+	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 
 	err := be.Add(context.Background(), "l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 	assert.Equal(t, err, vanity.ErrAlreadyClosed)
