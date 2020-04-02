@@ -16,7 +16,11 @@ before_install:
   - GO111MODULE=off go get -u github.com/golangci/golangci-lint/cmd/golangci-lint
   - go install github.com/mattn/goveralls
 script:
-  - if [ "$TRAVIS_OS_NAME" = 'linux' ]; then $GOPATH/bin/golangci-lint run ; fi
+  - >
+    if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
+      $GOPATH/bin/golangci-lint run || true; # https://github.com/golangci/golangci-lint/issues/824
+      $GOPATH/bin/golangci-lint run ;
+    fi
   - $GOPATH/bin/goveralls -service=travis-ci -race -v
 after_success:
   - bash <(curl -s https://codecov.io/bash)

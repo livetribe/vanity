@@ -40,4 +40,4 @@ of interest:
 Remember to close the client after use to free up the sessions in the session
 pool.
 */
-package vanity  // import "l7e.io/vanity"
+package vanity // import "l7e.io/vanity"
