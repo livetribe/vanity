@@ -35,6 +35,7 @@ type ConvenientBackend interface {
 	// virtually ignored.
 	AddEntry(importPath, vcs, vcsPath string)
 }
+
 type inMemory struct {
 	lock    sync.RWMutex
 	entries map[string]*entry
