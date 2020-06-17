@@ -34,7 +34,7 @@ func init() { //nolint:gochecknoinits
 			Use:   "remove <importPath>",
 			Short: "Remove vanity URL",
 			Long:  "Remove vanity URL",
-			Args:  cobra.ExactArgs(1), // nolint
+			Args:  cobra.ExactArgs(1),
 			Run:   removeCmd,
 		}
 	})

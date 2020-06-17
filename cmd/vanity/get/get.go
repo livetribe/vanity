@@ -40,7 +40,7 @@ func init() { //nolint:gochecknoinits
 			Use:   "get <importPath>",
 			Short: "Get vanity URL",
 			Long:  "Get vanity URL",
-			Args:  cobra.ExactArgs(1), // nolint
+			Args:  cobra.ExactArgs(1),
 			Run:   getCmd,
 		}
 

@@ -20,14 +20,15 @@ package gcp // import "l7e.io/vanity/pkg/gcp"
 
 import "net/http"
 
-const gceIngressUserAgent = "GoogleHC/1.0"
+// GCEIngressUserAgent is passed in the HTTP header by the GCE ingress agent.
+const GCEIngressUserAgent = "GoogleHC/1.0"
 
 // GLB wraps a Handler with a user agent check for a GCE ingress agent.  It
 // will always return an HTTP status OK.
 func GLB(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// tell Google LB everything is fine
-		if r.UserAgent() == gceIngressUserAgent {
+		if r.UserAgent() == GCEIngressUserAgent {
 			w.WriteHeader(http.StatusOK)
 
 			return

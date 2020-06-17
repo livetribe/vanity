@@ -14,35 +14,28 @@
  * limitations under the License.
  */
 
-package server
+package vanity
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewHandlerCheck_ok(t *testing.T) {
-	c := newHandlerCheck(&be{healthy: nil}, "")
+func TestSetLogger(t *testing.T) {
+	var record string
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	logger.Printf("%s%s%s", "a", "b", "c")
 
-	c.ServeHTTP(w, r)
-	resp := w.Result()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-}
+	assert.Equal(t, "", record)
 
-func TestNewHandlerCheck_error(t *testing.T) {
-	c := newHandlerCheck(&be{healthy: fmt.Errorf("unhealthy")}, "")
+	l := LoggerFunc(func(format string, z ...interface{}) {
+		record = fmt.Sprintf(format, z...)
+	})
+	SetLogger(l)
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	logger.Printf("%s%s%s", "a", "b", "c")
 
-	c.ServeHTTP(w, r)
-	resp := w.Result()
-	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
+	assert.Equal(t, "abc", record)
 }

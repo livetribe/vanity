@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cli
+package cli_test
 
 import (
 	"bufio"
@@ -29,6 +29,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 
+	"l7e.io/vanity/cmd/vanity/cli"
 	"l7e.io/vanity/cmd/vanity/cmdtest"
 )
 
@@ -93,7 +94,7 @@ func TestFlags_viaCmdLine(t *testing.T) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)
 
-		f := Flags(cmd)
+		f := cli.Flags(cmd)
 		v, ok := f.GetValue(apiKey)
 		assert.True(t, ok)
 		assert.Equal(t, expected, v)
@@ -110,7 +111,7 @@ func TestFlags_viaEnvVar(t *testing.T) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)
 
-		f := Flags(cmd)
+		f := cli.Flags(cmd)
 		v, ok := f.GetValue(apiKey)
 		assert.True(t, ok)
 		assert.Equal(t, expected, v)
@@ -137,7 +138,7 @@ func TestFlags_viaConfigFile(t *testing.T) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)
 
-		f := Flags(cmd)
+		f := cli.Flags(cmd)
 		v, ok := f.GetValue(apiKey)
 		assert.True(t, ok)
 		assert.Equal(t, cfgFileValue, v)
@@ -164,7 +165,7 @@ func TestFlags_envVarTakesPrecedence(t *testing.T) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)
 
-		f := Flags(cmd)
+		f := cli.Flags(cmd)
 		v, ok := f.GetValue(apiKey)
 		assert.True(t, ok)
 		assert.Equal(t, expected, v)
@@ -191,7 +192,7 @@ func TestFlags_cmdLineTakesPrecedence(t *testing.T) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)
 
-		f := Flags(cmd)
+		f := cli.Flags(cmd)
 		v, ok := f.GetValue(apiKey)
 		assert.True(t, ok)
 		assert.Equal(t, expected, v)

@@ -30,27 +30,27 @@ func (b *be) Close() error {
 	return nil
 }
 
-// Get vanity URL configuration for a given import path
+// Get vanity URL configuration for a given import path.
 func (b *be) Get(ctx context.Context, importPath string) (vcs, vcsPath string, err error) {
 	return "", "", nil
 }
 
-// Add a vanity URL configuration
+// Add a vanity URL configuration.
 func (b *be) Add(ctx context.Context, importPath, vcs, vcsPath string) error {
 	return nil
 }
 
-// Remove a vanity URL configuration by it's key, the import path
+// Remove a vanity URL configuration by it's key, the import path.
 func (b *be) Remove(ctx context.Context, importPath string) error {
 	return nil
 }
 
-// List all registered URL configurations, delivering them to the consumer callback
+// List all registered URL configurations, delivering them to the consumer callback.
 func (b *be) List(ctx context.Context, consumer vanity.Consumer) error {
 	return nil
 }
 
-// Healthz is a health check point for Kubernetes
+// Healthz is a health check point for Kubernetes.
 func (b *be) Healthz(ctx context.Context) error {
 	return b.healthy
 }

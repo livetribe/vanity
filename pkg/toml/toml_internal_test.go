@@ -343,9 +343,9 @@ vcs_path = "https://github.com/livetribe/three"
 
 		Convey("Ensure List can be canceled", func() {
 			start := &sync.WaitGroup{}
-			start.Add(1) //nolint
+			start.Add(1)
 			end := &sync.WaitGroup{}
-			end.Add(1) //nolint
+			end.Add(1)
 
 			ctx, cancel := context.WithCancel(context.Background())
 

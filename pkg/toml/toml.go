@@ -22,7 +22,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 
 	"github.com/pelletier/go-toml"
 	"l7e.io/vanity"
@@ -51,6 +50,14 @@ type settings struct {
 type Option interface {
 	Apply(*settings)
 }
+
+var (
+	errNoContentSpecified     = fmt.Errorf("no content specified")
+	errTableDoesNotExist      = fmt.Errorf("table does not exist")
+	errImportPathNotSpecified = fmt.Errorf("import_path not specified")
+	errVcsNotSpecified        = fmt.Errorf("vcs not specified")
+	errVcsPathNotSpecified    = fmt.Errorf("vcs_path not specified")
+)
 
 // InTable is used to specify the table the configuration can be found.
 // Dotted table names have their tokens specified separately, in order.
@@ -125,7 +132,7 @@ func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
 		if err != nil {
 			return nil, err
 		}
-		defer file.Close()
+		defer func() { _ = file.Close() }()
 		b, err = ioutil.ReadAll(file)
 		if err != nil {
 			return nil, err
@@ -136,7 +143,7 @@ func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
 			return
 		}
 	} else {
-		return nil, fmt.Errorf("no content specified")
+		return nil, errNoContentSpecified
 	}
 
 	tree, err := toml.LoadBytes(b)
@@ -150,12 +157,12 @@ func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
 
 	tree, ok := tree.GetPath(tables).(*toml.Tree)
 	if !ok {
-		return nil, fmt.Errorf("path does not exist: %s", strings.Join(tables, "."))
+		return nil, errTableDoesNotExist
 	}
 
 	array, ok := tree.Get(key).([]*toml.Tree)
 	if !ok {
-		return nil, fmt.Errorf("key %s does not exist at end of %s", key, strings.Join(tables, "."))
+		return nil, errTableDoesNotExist
 	}
 
 	entries := make(map[string]*entry)
@@ -166,13 +173,13 @@ func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
 			return nil, err
 		}
 		if e.ImportPath == "" {
-			return nil, fmt.Errorf("import_path not specified")
+			return nil, errImportPathNotSpecified
 		}
 		if e.Vcs == "" {
-			return nil, fmt.Errorf("vcs not specified")
+			return nil, errVcsNotSpecified
 		}
 		if e.VcsPath == "" {
-			return nil, fmt.Errorf("vcs_path not specified")
+			return nil, errVcsPathNotSpecified
 		}
 		entries[e.ImportPath] = e
 	}
@@ -208,11 +215,11 @@ func (s *tomlBE) Get(_ context.Context, importPath string) (string, string, erro
 }
 
 func (s *tomlBE) Add(_ context.Context, importPath, vcs, vcsPath string) error {
-	return fmt.Errorf("not supported")
+	return vanity.ErrNotSupported
 }
 
 func (s *tomlBE) Remove(_ context.Context, importPath string) error {
-	return fmt.Errorf("not supported")
+	return vanity.ErrNotSupported
 }
 
 func (s *tomlBE) List(ctx context.Context, consumer vanity.Consumer) error {

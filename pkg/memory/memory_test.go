@@ -15,7 +15,7 @@
  *
  */
 
-package memory
+package memory_test
 
 import (
 	"context"
@@ -28,12 +28,17 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"l7e.io/vanity"
+	"l7e.io/vanity/pkg/memory"
 )
+
+type entry struct {
+	vcs, vcsPath string
+}
 
 func TestInMemoryAPI(t *testing.T) {
 
 	Convey("Ensure get obtains entry from AddEntry", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 		be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 
 		vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
@@ -43,7 +48,7 @@ func TestInMemoryAPI(t *testing.T) {
 	})
 
 	Convey("Ensure get returns error for unknown entry", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 
 		vcs, vcsPath, err := be.Get(context.Background(), "foo")
 		So(vcs, ShouldBeEmpty)
@@ -52,7 +57,7 @@ func TestInMemoryAPI(t *testing.T) {
 	})
 
 	Convey("Ensure get obtains entry from Add", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 
 		err := be.Add(context.Background(), "l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 		So(err, ShouldBeNil)
@@ -64,7 +69,7 @@ func TestInMemoryAPI(t *testing.T) {
 	})
 
 	Convey("Ensure Remove works properly", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 		be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 
 		err := be.Remove(context.Background(), "l7e.io/vanity")
@@ -80,14 +85,14 @@ func TestInMemoryAPI(t *testing.T) {
 	})
 
 	Convey("Ensure Remove non-existing entry returns an error", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 
 		err := be.Remove(context.Background(), "foo")
 		So(err, ShouldBeError, vanity.ErrNotFound)
 	})
 
 	Convey("Ensure close always returns nil", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 		err := be.Close()
 
 		So(err, ShouldBeNil)
@@ -98,14 +103,14 @@ func TestInMemoryAPI(t *testing.T) {
 	})
 
 	Convey("Ensure always healthy", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 		err := be.Healthz(context.Background())
 
 		So(err, ShouldBeNil)
 	})
 
 	Convey("Ensure List obtains all entries from AddEntry", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 		be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 		be.AddEntry("m4o.io/pbf", "git", "https://github.com/magurl/pbf")
 
@@ -120,15 +125,15 @@ func TestInMemoryAPI(t *testing.T) {
 	})
 
 	Convey("Ensure List can be canceled", t, func() {
-		be := NewInMemoryAPI()
+		be := memory.NewInMemoryAPI()
 		be.AddEntry("a", "va", "vaPath")
 		be.AddEntry("b", "vb", "vbPath")
 		be.AddEntry("c", "vc", "vcPath")
 
 		start := &sync.WaitGroup{}
-		start.Add(1) //nolint
+		start.Add(1)
 		end := &sync.WaitGroup{}
-		end.Add(1) //nolint
+		end.Add(1)
 
 		ctx, cancel := context.WithCancel(context.Background())
 
@@ -153,7 +158,7 @@ func TestInMemoryAPI(t *testing.T) {
 }
 
 func TestInMemory_AddEntry(t *testing.T) {
-	be := NewInMemoryAPI()
+	be := memory.NewInMemoryAPI()
 
 	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 	vcs, vcsPath, err := be.Get(context.Background(), "l7e.io/vanity")
@@ -163,7 +168,7 @@ func TestInMemory_AddEntry(t *testing.T) {
 }
 
 func TestInMemory_Close(t *testing.T) {
-	be := NewInMemoryAPI()
+	be := memory.NewInMemoryAPI()
 	assert.NoError(t, be.Close())
 	assert.NoError(t, be.Close())
 
@@ -183,7 +188,7 @@ func TestInMemory_Close(t *testing.T) {
 }
 
 func TestInMemory_List(t *testing.T) {
-	be := NewInMemoryAPI()
+	be := memory.NewInMemoryAPI()
 	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 	be.AddEntry("m4o.io/pbf", "git", "https://github.com/magurl/pbf")
 
@@ -199,7 +204,7 @@ func TestInMemory_List(t *testing.T) {
 }
 
 func TestInMemory_List_Timeout(t *testing.T) {
-	be := NewInMemoryAPI()
+	be := memory.NewInMemoryAPI()
 	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 	be.AddEntry("m4o.io/pbf", "git", "https://github.com/magurl/pbf")
 
@@ -207,12 +212,12 @@ func TestInMemory_List_Timeout(t *testing.T) {
 
 	err := be.List(ctx,
 		vanity.ConsumerFunc(func(_ context.Context, _, _, _ string) {
-			time.Sleep(time.Millisecond * 50) // nolint
+			time.Sleep(time.Millisecond * 50)
 		}))
 	assert.Equal(t, err, context.DeadlineExceeded)
 }
 
 func TestInMemory_Healthz(t *testing.T) {
-	be := NewInMemoryAPI()
+	be := memory.NewInMemoryAPI()
 	assert.NoError(t, be.Healthz(context.Background())) // always healthy
 }

@@ -34,7 +34,7 @@ func (b *MockBackend) Close() error {
 	return nil
 }
 
-// Get vanity URL configuration for a given import path
+// Get vanity URL configuration for a given import path.
 func (b *MockBackend) Get(ctx context.Context, importPath string) (vcs, vcsPath string, err error) {
 	if b.Healthy != nil {
 		return "", "", b.Healthy
@@ -46,7 +46,7 @@ func (b *MockBackend) Get(ctx context.Context, importPath string) (vcs, vcsPath 
 	return v[0], v[1], nil
 }
 
-// Add a vanity URL configuration
+// Add a vanity URL configuration.
 func (b *MockBackend) Add(ctx context.Context, importPath, vcs, vcsPath string) error {
 	if b.Healthy != nil {
 		return b.Healthy
@@ -55,7 +55,7 @@ func (b *MockBackend) Add(ctx context.Context, importPath, vcs, vcsPath string) 
 	return nil
 }
 
-// Remove a vanity URL configuration by it's key, the import path
+// Remove a vanity URL configuration by it's key, the import path.
 func (b *MockBackend) Remove(ctx context.Context, importPath string) error {
 	if b.Healthy != nil {
 		return b.Healthy
@@ -68,7 +68,7 @@ func (b *MockBackend) Remove(ctx context.Context, importPath string) error {
 	return nil
 }
 
-// List all registered URL configurations, delivering them to the consumer callback
+// List all registered URL configurations, delivering them to the consumer callback.
 func (b *MockBackend) List(ctx context.Context, consumer vanity.Consumer) error {
 	if b.Healthy != nil {
 		return b.Healthy
@@ -79,7 +79,7 @@ func (b *MockBackend) List(ctx context.Context, consumer vanity.Consumer) error 
 	return nil
 }
 
-// Healthz is a health check point for Kubernetes
+// Healthz is a health check point for Kubernetes.
 func (b *MockBackend) Healthz(ctx context.Context) error {
 	return b.Healthy
 }

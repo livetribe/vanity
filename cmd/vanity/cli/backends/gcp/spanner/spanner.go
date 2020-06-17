@@ -37,6 +37,10 @@ const (
 	database = "database"
 )
 
+var (
+	errUnableToGetDatabase = fmt.Errorf("unable to get database")
+)
+
 func init() { //nolint:gochecknoinits
 	cli.RootCmd.AddCommand(Command)
 
@@ -102,7 +106,7 @@ func newHelper(cmd *cobra.Command) *helper {
 func (h *helper) getBackend() (vanity.Backend, error) {
 	db, ok := h.GetValue(database)
 	if !ok {
-		return nil, fmt.Errorf("unable to get database")
+		return nil, errUnableToGetDatabase
 	}
 	glog.V(log.Debug).Infof("database: %s", db)
 

@@ -14,28 +14,37 @@
  * limitations under the License.
  */
 
-package vanity_test
+package server
 
 import (
-	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"l7e.io/vanity"
 )
 
-func TestConsumerFunc(t *testing.T) {
-	var ip, v, vp string
-	c := vanity.ConsumerFunc(func(context context.Context, importPath, vcs, vcsPath string) {
-		ip = importPath
-		v = vcs
-		vp = vcsPath
-	})
+var errUnhealthy = fmt.Errorf("unhealthy")
 
-	c.OnEntry(context.Background(), "a", "b", "c")
+func TestNewHandlerCheck_ok(t *testing.T) {
+	c := newHandlerCheck(&be{healthy: nil}, "")
 
-	assert.Equal(t, "a", ip)
-	assert.Equal(t, "b", v)
-	assert.Equal(t, "c", vp)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "http://a.com", nil)
+
+	c.ServeHTTP(w, r)
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}
+
+func TestNewHandlerCheck_error(t *testing.T) {
+	c := newHandlerCheck(&be{healthy: errUnhealthy}, "")
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "http://a.com", nil)
+
+	c.ServeHTTP(w, r)
+	resp := w.Result()
+	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cli
+package cli_test
 
 import (
 	"context"
@@ -22,10 +22,12 @@ import (
 
 	"github.com/kami-zh/go-capturer"
 	"github.com/stretchr/testify/assert"
+
+	"l7e.io/vanity/cmd/vanity/cli"
 )
 
 func TestPlainConsumer(t *testing.T) {
-	c := NewPlainConsumer()
+	c := cli.NewPlainConsumer()
 
 	out := capturer.CaptureOutput(func() {
 		c.OnEntry(context.Background(), "a", "b", "c")
@@ -36,7 +38,7 @@ func TestPlainConsumer(t *testing.T) {
 }
 
 func TestJSONConsumer(t *testing.T) {
-	c := NewJSONConsumer()
+	c := cli.NewJSONConsumer()
 
 	out := capturer.CaptureOutput(func() {
 		c.OnEntry(context.Background(), "a", "b", "c")

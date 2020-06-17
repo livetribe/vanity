@@ -25,11 +25,13 @@ import (
 	json "github.com/gibson042/canonicaljson-go"
 )
 
+var errOi = fmt.Errorf("oi")
+
 // SHA1FromJSON generates a SHA1 hash from a canonical JSON object.
 func SHA1FromJSON(doc string) (string, error) {
 	var v interface{}
 	if err := json.Unmarshal([]byte(doc), &v); err != nil {
-		return "", fmt.Errorf("oi")
+		return "", errOi
 	}
 	bytes, _ := json.Marshal(v)
 	sum := sha1.Sum(bytes) // nolint

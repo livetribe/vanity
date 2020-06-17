@@ -28,6 +28,9 @@ var (
 
 	// ErrNotFound is returned if the import path cannot MockBackend found.
 	ErrNotFound = fmt.Errorf("not found")
+
+	// ErrNotSupported is returned if the Backend method is not supported by the implementation.
+	ErrNotSupported = fmt.Errorf("not supported")
 )
 
 // Backend implementations provide access to a vanity URL store.

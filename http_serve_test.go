@@ -30,6 +30,8 @@ import (
 	"l7e.io/vanity/apitest"
 )
 
+var errNotHealthy = fmt.Errorf("not healthy")
+
 func TestHandler_ServeHTTP_http(t *testing.T) {
 	prometheusReset()
 
@@ -103,7 +105,7 @@ func TestHandler_ServeHTTP_get_not_found(t *testing.T) {
 func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
 	prometheusReset()
 
-	h := vanity.NewVanityHandler(&apitest.MockBackend{Healthy: fmt.Errorf("not healthy")})
+	h := vanity.NewVanityHandler(&apitest.MockBackend{Healthy: errNotHealthy})
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "https://a.com/z", nil)

@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-package cli
+package cli_test
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"l7e.io/vanity/cmd/vanity/cli"
 )
 
 func TestSHA1FromString(t *testing.T) {
-	sha1 := SHA1FromString("how now brown cow")
+	sha1 := cli.SHA1FromString("how now brown cow")
 	assert.Equal(t, "0de4bd7dfbc0f048319be1dad049a6cd7bede689", sha1)
 }
 
 func TestSHA1FromJSON(t *testing.T) {
 	expected := "ae141a09b1c9d2a7cb26c7741fcb5e762c51b80f"
 
-	sha1, err := SHA1FromJSON("{\"how\": \"now\", \"brown\": \"cow\"}")
+	sha1, err := cli.SHA1FromJSON("{\"how\": \"now\", \"brown\": \"cow\"}")
 	assert.NoError(t, err)
 	assert.Equal(t, expected, sha1)
 
-	sha1, err = SHA1FromJSON("{\"brown\": \"cow\", \"how\": \"now\"}")
+	sha1, err = cli.SHA1FromJSON("{\"brown\": \"cow\", \"how\": \"now\"}")
 	assert.NoError(t, err)
 	assert.Equal(t, expected, sha1)
 }
 
 func TestSHA1FromJSON_badJSON(t *testing.T) {
-	_, err := SHA1FromJSON("{\"how\": \"now\"")
+	_, err := cli.SHA1FromJSON("{\"how\": \"now\"")
 	assert.Error(t, err)
 }

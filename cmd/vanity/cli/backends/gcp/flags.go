@@ -40,6 +40,10 @@ const (
 	credentialsJSON = "credentials-json"
 )
 
+var (
+	errFileDoesNotExist = fmt.Errorf("file does not exist")
+)
+
 // InitFlags initializes the Cobra command with flags common to Google API clients.
 func InitFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
@@ -118,7 +122,7 @@ func (h *Helper) CollectCredentialsFileOption(options []option.ClientOption) ([]
 	}
 
 	if !cli.FileExists(cf) {
-		return options, fmt.Errorf("file %s does not exist", cf)
+		return options, errFileDoesNotExist
 	}
 
 	glog.V(log.Debug).Infof("Google API credentials file: %s", cf)

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gcp
+package gcp_test
 
 import (
 	"net/http"
@@ -21,6 +21,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"l7e.io/vanity/pkg/gcp"
 )
 
 func TestGLB_normal(t *testing.T) {
@@ -32,7 +34,7 @@ func TestGLB_normal(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "http://a.com", nil)
 
-	glb := GLB(h)
+	glb := gcp.GLB(h)
 	glb.ServeHTTP(w, r)
 
 	resp := w.Result()
@@ -48,9 +50,9 @@ func TestGLB_behind_glb(t *testing.T) {
 	})
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest("GET", "http://a.com", nil)
-	r.Header.Add("User-Agent", gceIngressUserAgent)
+	r.Header.Add("User-Agent", gcp.GCEIngressUserAgent)
 
-	glb := GLB(h)
+	glb := gcp.GLB(h)
 	glb.ServeHTTP(w, r)
 
 	resp := w.Result()

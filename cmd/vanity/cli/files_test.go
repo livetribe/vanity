@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cli
+package cli_test
 
 import (
 	"io/ioutil"
@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"l7e.io/vanity/cmd/vanity/cli"
 )
 
 func TestFileExists(t *testing.T) {
@@ -29,8 +31,8 @@ func TestFileExists(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Remove(file.Name())
 
-	assert.True(t, FileExists(file.Name()))
+	assert.True(t, cli.FileExists(file.Name()))
 
-	assert.False(t, FileExists("/foo.dat"))
-	assert.False(t, FileExists("."))
+	assert.False(t, cli.FileExists("/foo.dat"))
+	assert.False(t, cli.FileExists("."))
 }
