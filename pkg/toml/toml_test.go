@@ -18,6 +18,8 @@ package toml
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -100,6 +102,39 @@ vcs_path = "https://github.com/livetribe/one"
 
 func TestTomlConstruction(t *testing.T) {
 	Convey("Test TOML backend construction", t, func() {
+		Convey("Construction with a file", func() {
+			content := []byte(`
+[[obj]]
+import_path = "l7e.io/one"
+vcs = "git"
+vcs_path = "https://github.com/livetribe/one"
+[[obj]]
+import_path = "l7e.io/two"
+vcs = "git"
+vcs_path = "https://github.com/livetribe/two"
+[[obj]]
+import_path = "l7e.io/three"
+vcs = "git"
+vcs_path = "https://github.com/livetribe/three"
+`)
+			tmpfile, err := ioutil.TempFile("", "toml")
+			So(err, ShouldBeNil)
+
+			defer func() {
+				_ = tmpfile.Close()
+				_ = os.Remove(tmpfile.Name())
+			}()
+
+			_, err = tmpfile.Write(content)
+			So(err, ShouldBeNil)
+
+			be, err := NewTOMLBackend(InTable("obj"), FromFile(tmpfile.Name()))
+			So(err, ShouldBeNil)
+			So(be, ShouldNotBeNil)
+
+			verify(be)
+		})
+
 		Convey("Construction with Reader", func() {
 			r := strings.NewReader(`
 [[obj]]
@@ -287,15 +322,13 @@ vcs_path = "https://github.com/livetribe/three"
 		So(be, ShouldNotBeNil)
 
 		Convey("Add should panic", func() {
-			So(func() {
-				_ = be.Add(context.Background(), "l7e.io/one", "git", "https://github.com/livetribe/one")
-			}, ShouldPanic)
+			err = be.Add(context.Background(), "l7e.io/one", "git", "https://github.com/livetribe/one")
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Remove should panic", func() {
-			So(func() {
-				_ = be.Remove(context.Background(), "l7e.io/one")
-			}, ShouldPanic)
+			err = be.Remove(context.Background(), "l7e.io/one")
+			So(err, ShouldNotBeNil)
 		})
 
 		Convey("Test List", func() {

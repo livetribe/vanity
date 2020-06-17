@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/pelletier/go-toml"
@@ -119,6 +120,16 @@ func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
 		b = s.Bytes
 	} else if s.String != "" {
 		b = []byte(s.String)
+	} else if s.Path != "" {
+		file, err := os.Open(s.Path)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+		b, err = ioutil.ReadAll(file)
+		if err != nil {
+			return nil, err
+		}
 	} else if s.Reader != nil {
 		b, err = ioutil.ReadAll(s.Reader)
 		if err != nil {
@@ -197,11 +208,11 @@ func (s *tomlBE) Get(_ context.Context, importPath string) (string, string, erro
 }
 
 func (s *tomlBE) Add(_ context.Context, importPath, vcs, vcsPath string) error {
-	panic("Not supported")
+	return fmt.Errorf("not supported")
 }
 
 func (s *tomlBE) Remove(_ context.Context, importPath string) error {
-	panic("Not supported")
+	return fmt.Errorf("not supported")
 }
 
 func (s *tomlBE) List(ctx context.Context, consumer vanity.Consumer) error {
