@@ -23,6 +23,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -209,6 +210,10 @@ func isHTTPS(r *http.Request) bool {
 	if r.TLS != nil {
 		return true
 	}
+
+	glog.Infof("r.URL.Scheme: %s", r.URL.Scheme)
+	glog.Infof("r.Header.Get(xForwardedProto): %s", r.Header.Get(xForwardedProto))
+	glog.Infof("r.TLS != nil: %t", r.TLS != nil)
 
 	return false
 }
