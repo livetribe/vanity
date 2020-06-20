@@ -1,44 +1,11 @@
 package vanity
 
 import (
-	"crypto/tls"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestIsHttps_https(t *testing.T) {
-	r, err := http.NewRequest("GET", "https://a.com", nil)
-	assert.NoError(t, err)
-	assert.True(t, isHTTPS(r))
-}
-
-func TestIsHttps_forwarded(t *testing.T) {
-	r, err := http.NewRequest("GET", "http://a.com", nil)
-	assert.NoError(t, err)
-
-	r.Header.Add(xForwardedProto, "https")
-	assert.True(t, isHTTPS(r))
-}
-
-func TestIsHttps_TLS(t *testing.T) {
-	r, err := http.NewRequest("GET", "http://a.com", nil)
-	assert.NoError(t, err)
-
-	r.TLS = &tls.ConnectionState{
-		Version:           tls.VersionTLS12,
-		HandshakeComplete: true,
-		ServerName:        r.Host,
-	}
-	assert.True(t, isHTTPS(r))
-}
-
-func TestIsHttps_http(t *testing.T) {
-	r, err := http.NewRequest("GET", "http://a.com", nil)
-	assert.NoError(t, err)
-	assert.False(t, isHTTPS(r))
-}
 
 func TestHost_not_forwarded(t *testing.T) {
 	r := &http.Request{Host: "host", Header: make(http.Header)}

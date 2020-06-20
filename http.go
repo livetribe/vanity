@@ -23,14 +23,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 const (
-	xForwardedHost  = "X-Forwarded-Host"
-	xForwardedProto = "X-Forwarded-Proto"
+	xForwardedHost = "X-Forwarded-Host"
 
 	// DefaultDocURL is the default Go doc URL.
 	// It can MockBackend replaced with https://https://godoc.org/.
@@ -128,15 +126,6 @@ func NewVanityHandler(api Backend) http.Handler {
 
 func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
-	if !isHTTPS(r) {
-		url := *r.URL
-		url.Scheme = "https"
-		url.Host = host(r)
-		http.Redirect(w, r, url.String(), http.StatusMovedPermanently)
-
-		return
-	}
-
 	if r.Method != http.MethodGet {
 		status := http.StatusMethodNotAllowed
 		http.Error(w, http.StatusText(status), status)
@@ -198,24 +187,6 @@ func (s *Handler) timedGet(ctx context.Context, importPath string) (vcs, vcsPath
 	vcs, vcsPath, err = s.api.Get(ctx, importPath)
 
 	return
-}
-
-func isHTTPS(r *http.Request) bool {
-	if r.URL.Scheme == "https" {
-		return true
-	}
-	if r.Header.Get(xForwardedProto) == "https" {
-		return true
-	}
-	if r.TLS != nil {
-		return true
-	}
-
-	glog.Infof("r.URL.Scheme: %s", r.URL.Scheme)
-	glog.Infof("r.Header.Get(xForwardedProto): %s", r.Header.Get(xForwardedProto))
-	glog.Infof("r.TLS != nil: %t", r.TLS != nil)
-
-	return false
 }
 
 func host(r *http.Request) string {
