@@ -32,26 +32,6 @@ import (
 
 var errNotHealthy = fmt.Errorf("not healthy")
 
-func TestHandler_ServeHTTP_http(t *testing.T) {
-	prometheusReset()
-
-	h := vanity.NewVanityHandler(&apitest.MockBackend{})
-
-	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
-	h.ServeHTTP(w, r)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusMovedPermanently, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-	match, err := regexp.Match(`https://a\.com`, body)
-	assert.NoError(t, err)
-	assert.True(t, match, string(body))
-
-	prometheusCheck(t, 0, 0, 0, 0, 0)
-}
-
 func TestHandler_ServeHTTP_put(t *testing.T) {
 	prometheusReset()
 
