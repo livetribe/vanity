@@ -124,3 +124,31 @@ func TestHandler_ServeHTTP_get(t *testing.T) {
 
 	prometheusCheck(t, 1, 0, 0, 0, 0)
 }
+
+func TestHandler_ServeHTTP_get_extendedPath(t *testing.T) {
+	prometheusReset()
+
+	expected := `<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <meta name="go-import" content="a.com/b/v1 vcs vcsPath/b">
+  <meta name="go-source" content="a.com/b/v1 vcsPath/b vcsPath/b/tree/master{/dir} vcsPath/b/blob/master{/dir}/{file}#L{line}">
+</head>
+</html>
+`
+
+	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "https://a.com/b/v1?go-get=1", nil)
+	h.ServeHTTP(w, r)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	assert.Equal(t, expected, string(body))
+
+	prometheusCheck(t, 1, 0, 0, 0, 0)
+}

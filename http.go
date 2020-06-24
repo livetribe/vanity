@@ -21,6 +21,7 @@ import (
 	"context"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -137,7 +138,13 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	ctx, _ := context.WithTimeout(r.Context(), s.Duration) // nolint
 
-	importPath := host(r) + r.URL.Path
+	root := r.URL.Path
+	paths := strings.FieldsFunc(root, func(c rune) bool { return c == '/' })
+	if len(paths) > 0 {
+		root = "/" + paths[0]
+	}
+
+	importPath := host(r) + root
 
 	vcs, repoRoot, err := s.timedGet(ctx, importPath)
 	if err != nil {
@@ -153,7 +160,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vcsRoot := repoRoot + r.URL.Path
+	vcsRoot := repoRoot + root
 
 	if r.FormValue("go-get") != "1" {
 		APIDocRedirects.Inc()
@@ -163,7 +170,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := templatize(importPath, vcs, vcsRoot)
+	body, err := templatize(host(r)+r.URL.Path, vcs, vcsRoot)
 	if err != nil {
 		logger.Printf("Unable to templatize %s: %s", importPath, err)
 		APIErrTemplates.Inc()
