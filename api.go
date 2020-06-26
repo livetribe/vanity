@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package vanity // import "l7e.io/vanity"
+package vanity
 
 import (
 	"context"

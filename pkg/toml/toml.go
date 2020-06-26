@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package toml // import "l7e.io/vanity/pkg/toml"
+package toml
 
 import (
 	"context"

@@ -47,4 +47,4 @@ ignored.
     be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 
 */
-package memory
+package memory // import "l7e.io/vanity/pkg/memory"

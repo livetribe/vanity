@@ -15,7 +15,7 @@
  *
  */
 
-package memory // import "l7e.io/vanity/pkg/memory"
+package memory
 
 import (
 	"context"

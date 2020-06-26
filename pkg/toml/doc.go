@@ -69,4 +69,4 @@ To create a backend instance:
 Remember to close the backend instance after use.
 
 */
-package toml
+package toml // import "l7e.io/vanity/pkg/toml"
