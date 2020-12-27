@@ -29,12 +29,12 @@ import (
 )
 
 func TestRemove(t *testing.T) {
-	backends.Backend = &apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}}
+	backends.Set(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 	cmd := cmdtest.NewCommand(func(cmd *cobra.Command, args []string) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)
 	})
 
 	removeCmd(cmd, []string{"a.com/b"})
-	assert.Empty(t, backends.Backend.(*apitest.MockBackend).Urls["a.com/b"])
+	assert.Empty(t, backends.Get().(*apitest.MockBackend).Urls["a.com/b"])
 }

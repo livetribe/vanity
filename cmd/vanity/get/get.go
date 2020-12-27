@@ -65,7 +65,7 @@ func getCmd(cmd *cobra.Command, args []string) {
 	}
 
 	importPath := args[0]
-	vcs, vcsPath, err := backends.Backend.Get(context.Background(), importPath)
+	vcs, vcsPath, err := backends.Get().Get(context.Background(), importPath)
 	if err != nil {
 		glog.Exitf("Unable to get %s: %s", importPath, err)
 	}

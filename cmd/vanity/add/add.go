@@ -47,7 +47,7 @@ func addCmd(_ *cobra.Command, args []string) {
 
 	glog.V(log.Debug).Infof("Adding %s %s %s...", importPath, vcs, vcsPath)
 
-	err := backends.Backend.Add(context.Background(), importPath, vcs, vcsPath)
+	err := backends.Get().Add(context.Background(), importPath, vcs, vcsPath)
 	if err != nil {
 		glog.Exitf("Unable to add %s %s %s: %s", importPath, vcs, vcsPath, err)
 	}

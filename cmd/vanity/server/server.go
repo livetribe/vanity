@@ -38,20 +38,10 @@ func serverCmd(cmd *cobra.Command, _ []string) {
 
 	svrHelp := newHelper(cmd)
 
-	vanity := svrHelp.getHTTPServer(backends.Backend)
-	if err != nil {
-		glog.Exitf("Unable create vanity server: %s", err)
-	}
+	vanity := svrHelp.getHTTPServer(backends.Get())
 
-	healthz := svrHelp.getHealthz(newHandlerCheck(backends.Backend, "healthz"))
-	if err != nil {
-		glog.Exitf("Unable create healthz server: %s", err)
-	}
-
-	readyz := svrHelp.getReadyz(newHandlerCheck(backends.Backend, "readyz"))
-	if err != nil {
-		glog.Exitf("Unable create readyz server: %s", err)
-	}
+	healthz := svrHelp.getHealthz(newHandlerCheck(backends.Get(), "healthz"))
+	readyz := svrHelp.getReadyz(newHandlerCheck(backends.Get(), "readyz"))
 
 	metrics := svrHelp.getMetrics()
 	if err != nil {
@@ -61,7 +51,7 @@ func serverCmd(cmd *cobra.Command, _ []string) {
 	watcher := yama.NewWatcher(
 		yama.WatchingSignals(syscall.SIGINT, syscall.SIGTERM),
 		yama.WithTimeout(2*time.Second), // nolint
-		yama.WithClosers(backends.Backend, vanity, healthz, readyz, metrics))
+		yama.WithClosers(backends.Get(), vanity, healthz, readyz, metrics))
 
 	go func() {
 		if err = metrics.ListenAndServe(); err != http.ErrServerClosed {

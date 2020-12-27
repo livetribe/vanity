@@ -30,7 +30,7 @@ import (
 )
 
 func TestList(t *testing.T) {
-	backends.Backend = &apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}}
+	backends.Set(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 	cmd := cmdtest.NewCommand(func(cmd *cobra.Command, args []string) {
 		err := viper.BindPFlags(cmd.Flags())
 		assert.NoError(t, err)

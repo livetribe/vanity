@@ -18,7 +18,11 @@
 // Package backends contains the shared implementation of vanity.Backend.
 package backends
 
-import "l7e.io/vanity"
+import (
+	"context"
+
+	"l7e.io/vanity"
+)
 
 /*
 Backend is the shared implementation of vanity.Backend, installed by one of
@@ -27,4 +31,45 @@ the backend sub-commands of the vanity root command, cli.RootCmd.
 Sub-commands of backend sub-commands, e.g. add and list, can use this to perform
 their functionality.
 */
-var Backend vanity.Backend
+var backend vanity.Backend
+
+func init() {
+	backend = &doNothing{}
+}
+
+func Set(be vanity.Backend) {
+	if be != nil {
+		backend = be
+	}
+}
+
+func Get() vanity.Backend {
+	return backend
+}
+
+type doNothing struct {
+}
+
+func (s *doNothing) Close() error {
+	return nil
+}
+
+func (s *doNothing) Get(_ context.Context, _ string) (string, string, error) {
+	return "", "", vanity.ErrNotFound
+}
+
+func (s *doNothing) Add(_ context.Context, _, _, _ string) error {
+	return nil
+}
+
+func (s *doNothing) Remove(_ context.Context, _ string) error {
+	return vanity.ErrNotFound
+}
+
+func (s *doNothing) List(_ context.Context, _ vanity.Consumer) error {
+	return nil
+}
+
+func (s *doNothing) Healthz(_ context.Context) error {
+	return nil
+}

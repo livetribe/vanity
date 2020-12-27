@@ -45,7 +45,7 @@ func removeCmd(_ *cobra.Command, args []string) {
 
 	glog.V(log.Debug).Infof("Removing %s...", importPath)
 
-	err := backends.Backend.Remove(context.Background(), importPath)
+	err := backends.Get().Remove(context.Background(), importPath)
 	if err != nil {
 		glog.Exitf("Unable to remove %s: %s", importPath, err)
 	}

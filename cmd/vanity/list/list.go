@@ -64,7 +64,7 @@ func listCmd(cmd *cobra.Command, _ []string) {
 		c = cli.NewPlainConsumer()
 	}
 
-	err = backends.Backend.List(context.Background(), c)
+	err = backends.Get().List(context.Background(), c)
 	if err != nil {
 		glog.Exitf("Unable to obtain list: %s", err)
 	}

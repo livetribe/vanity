@@ -39,6 +39,7 @@ const (
 
 var (
 	errUnableToGetDatabase = fmt.Errorf("unable to get database")
+	saved                  vanity.Backend
 )
 
 func init() { //nolint:gochecknoinits
@@ -77,16 +78,17 @@ var Command = &cobra.Command{
 			return err
 		}
 
-		backends.Backend = backend
+		saved = backends.Get()
+		backends.Set(backend)
 
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 		glog.V(log.Debug).Infoln("Clean backend of spanner")
 		defer func() {
-			backends.Backend = nil
+			backends.Set(saved)
 		}()
-		return backends.Backend.Close()
+		return backends.Get().Close()
 	},
 }
 

@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+
 	"l7e.io/vanity"
 )
 

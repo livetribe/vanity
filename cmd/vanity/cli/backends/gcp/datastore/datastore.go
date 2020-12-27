@@ -36,6 +36,8 @@ const (
 	projectID = "project-id"
 )
 
+var saved vanity.Backend
+
 func init() { //nolint:gochecknoinits
 	cli.RootCmd.AddCommand(Command)
 
@@ -74,15 +76,16 @@ var Command = &cobra.Command{
 			return err
 		}
 
-		backends.Backend = backend
+		saved = backends.Get()
+		backends.Set(backend)
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
 		glog.V(log.Debug).Infoln("Clean backend of datastore")
 		defer func() {
-			backends.Backend = nil
+			backends.Set(saved)
 		}()
-		return backends.Backend.Close()
+		return backends.Get().Close()
 	},
 }
 
