@@ -7,7 +7,6 @@ require (
 	cloud.google.com/go/spanner v1.1.0
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.3.2
 	github.com/kami-zh/go-capturer v0.0.0-20171211120116-e492ea43421d
 	github.com/pelletier/go-toml v1.8.0
 	github.com/pkg/errors v0.9.1
@@ -20,6 +19,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	google.golang.org/api v0.13.0
 	google.golang.org/grpc v1.21.1
+	google.golang.org/protobuf v1.36.12
 	l7e.io/yama v0.2.0
 )
 
@@ -30,6 +30,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/googleapis/gax-go/v2 v2.0.5 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
