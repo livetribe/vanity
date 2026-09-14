@@ -19,8 +19,8 @@ package datastore
 
 import (
 	"fmt"
+	"log/slog"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -28,7 +28,6 @@ import (
 	"l7e.io/vanity/cmd/vanity/cli"
 	"l7e.io/vanity/cmd/vanity/cli/backends"
 	"l7e.io/vanity/cmd/vanity/cli/backends/gcp"
-	"l7e.io/vanity/cmd/vanity/cli/log"
 	be "l7e.io/vanity/pkg/gcp/datastore"
 )
 
@@ -60,10 +59,9 @@ var Command = &cobra.Command{
 	Long:  commandDescription,
 	Args:  cobra.NoArgs,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		glog.V(log.Debug).Infoln("Set backend w/ datastore")
+		slog.Debug("Set the backend to datastore")
 
-		err := viper.BindPFlags(cmd.Flags())
-		if err != nil {
+		if err := viper.BindPFlags(cmd.Flags()); err != nil {
 			return fmt.Errorf(unableToBind, err)
 		}
 
@@ -73,8 +71,7 @@ var Command = &cobra.Command{
 			return fmt.Errorf(unableToInstantiate, err)
 		}
 
-		err = beHelp.gh.AddInterceptors()
-		if err != nil {
+		if err := beHelp.gh.AddInterceptors(); err != nil {
 			return err
 		}
 
@@ -83,7 +80,7 @@ var Command = &cobra.Command{
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-		glog.V(log.Debug).Infoln("Clean backend of datastore")
+		slog.Debug("Clean the datastore backend")
 		defer func() {
 			backends.Set(saved)
 		}()
@@ -113,9 +110,9 @@ func (h *helper) getProjectID() (id string, found bool) {
 func (h *helper) getBackend() (vanity.Backend, error) {
 	id, found := h.getProjectID()
 	if !found {
-		glog.Info("Unable to obtain project id - relying on DATASTORE_PROJECT_ID")
+		slog.Info("No project id. The client reads DATASTORE_PROJECT_ID")
 	} else {
-		glog.Infof("project id: %s", id)
+		slog.Info("Read the project id", slog.String("projectID", id))
 	}
 
 	options, err := h.gh.GetClientOptions()

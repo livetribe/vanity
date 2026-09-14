@@ -19,12 +19,13 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"syscall"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"l7e.io/yama"
@@ -35,10 +36,9 @@ import (
 // closeTimeout is the time that the watcher gives the closers to finish.
 const closeTimeout = 2 * time.Second
 
-func serverCmd(cmd *cobra.Command, _ []string) {
-	err := viper.BindPFlags(cmd.Flags())
-	if err != nil {
-		glog.Exitf("Unable to bind viper to command line flags: %s", err)
+func serverCmd(cmd *cobra.Command, _ []string) error {
+	if err := viper.BindPFlags(cmd.Flags()); err != nil {
+		return fmt.Errorf("unable to bind viper to the command line flags: %w", err)
 	}
 
 	svrHelp := newHelper(cmd)
@@ -61,10 +61,13 @@ func serverCmd(cmd *cobra.Command, _ []string) {
 
 	serve(vanity, watcher)
 
-	if err = watcher.Wait(); err != nil {
-		glog.Warningf("Shutdown error: %s", err)
+	if err := watcher.Wait(); err != nil {
+		slog.Warn("Unable to shut down", slog.Any("error", err))
 	}
-	glog.Info("Vanity exited")
+
+	slog.Info("Vanity exited")
+
+	return nil
 }
 
 // serve runs the server until the server stops. It closes the watcher when the
@@ -72,7 +75,7 @@ func serverCmd(cmd *cobra.Command, _ []string) {
 func serve(server *http.Server, watcher io.Closer) {
 	err := server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
-		glog.Error(err)
+		slog.Error("Unable to serve", slog.Any("error", err))
 		_ = watcher.Close()
 	}
 }

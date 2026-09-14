@@ -20,9 +20,8 @@ Package get contains the get sub-command to get vanity URLs.
 package get
 
 import (
-	"context"
+	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -43,7 +42,7 @@ func init() { //nolint:gochecknoinits
 			Short: getDescription,
 			Long:  getDescription,
 			Args:  cobra.ExactArgs(1),
-			Run:   getCmd,
+			RunE:  getCmd,
 		}
 
 		flags := cmd.Flags()
@@ -53,10 +52,9 @@ func init() { //nolint:gochecknoinits
 	})
 }
 
-func getCmd(cmd *cobra.Command, args []string) {
-	err := viper.BindPFlags(cmd.Flags())
-	if err != nil {
-		glog.Exitf("Unable to bind viper to command line flags: %s", err)
+func getCmd(cmd *cobra.Command, args []string) error {
+	if err := viper.BindPFlags(cmd.Flags()); err != nil {
+		return fmt.Errorf("unable to bind viper to the command line flags: %w", err)
 	}
 
 	var c vanity.Consumer
@@ -66,11 +64,15 @@ func getCmd(cmd *cobra.Command, args []string) {
 		c = cli.NewPlainConsumer()
 	}
 
+	ctx := cmd.Context()
 	importPath := args[0]
-	vcs, vcsPath, err := backends.Get().Get(context.Background(), importPath)
+
+	vcs, vcsPath, err := backends.Get().Get(ctx, importPath)
 	if err != nil {
-		glog.Exitf("Unable to get %s: %s", importPath, err)
+		return fmt.Errorf("unable to get %s: %w", importPath, err)
 	}
 
-	c.OnEntry(context.Background(), importPath, vcs, vcsPath)
+	c.OnEntry(ctx, importPath, vcs, vcsPath)
+
+	return nil
 }

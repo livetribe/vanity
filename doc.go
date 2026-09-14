@@ -44,7 +44,7 @@ This package exports Prometheus collectors. They count the calls to the
 Backend, the errors, the not-found results, the documentation redirects, and
 the template errors. SummaryVec records the duration of each Backend call.
 
-The handler writes messages to a Logger. The default Logger discards the
-messages. Call SetLogger to replace it.
+The handler writes its messages to a log/slog logger from the request context.
+The handler uses slog.Default() when the request context has no logger.
 */
 package vanity // import "l7e.io/vanity"

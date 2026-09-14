@@ -18,14 +18,13 @@
 package add
 
 import (
-	"context"
+	"fmt"
+	"log/slog"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 
 	"l7e.io/vanity/cmd/vanity/cli/backends"
 	"l7e.io/vanity/cmd/vanity/cli/backends/helpers"
-	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
 const addDescription = "Add vanity URL"
@@ -37,22 +36,26 @@ func init() { //nolint:gochecknoinits
 			Short: addDescription,
 			Long:  addDescription,
 			Args:  cobra.ExactArgs(3), //nolint:mnd
-			Run:   addCmd,
+			RunE:  addCmd,
 		}
 	})
 }
 
-func addCmd(_ *cobra.Command, args []string) {
+func addCmd(cmd *cobra.Command, args []string) error {
 	importPath := args[0]
 	vcs := args[1]
 	vcsPath := args[2]
 
-	glog.V(log.Debug).Infof("Adding %s %s %s...", importPath, vcs, vcsPath)
+	slog.Debug("Adding the vanity URL",
+		slog.String("importPath", importPath), slog.String("vcs", vcs), slog.String("vcsPath", vcsPath))
 
-	err := backends.Get().Add(context.Background(), importPath, vcs, vcsPath)
-	if err != nil {
-		glog.Exitf("Unable to add %s %s %s: %s", importPath, vcs, vcsPath, err)
+	ctx := cmd.Context()
+
+	if err := backends.Get().Add(ctx, importPath, vcs, vcsPath); err != nil {
+		return fmt.Errorf("unable to add %s: %w", importPath, err)
 	}
 
-	glog.V(log.Debug).Info("Added")
+	slog.Debug("Added the vanity URL")
+
+	return nil
 }

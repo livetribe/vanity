@@ -21,12 +21,15 @@ import (
 	"context"
 	"errors"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"l7e.io/vanity/internal/logging"
 )
 
 const (
@@ -146,6 +149,8 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	logger := logging.FromContext(r.Context())
+
 	APICalls.Inc()
 
 	ctx, cancel := context.WithTimeout(r.Context(), s.Duration)
@@ -165,7 +170,8 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			APINotFound.Inc()
 			http.NotFound(w, r)
 		} else {
-			logger.Printf("Unable to get %s: %s", importPath, err)
+			logger.LogAttrs(ctx, slog.LevelError, "Unable to get the import path",
+				slog.String("importPath", importPath), slog.Any("error", err))
 			APIErrors.Inc()
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -183,9 +189,15 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	body, err := templatize(host(r)+r.URL.Path, vcs, vcsRoot)
+	importRoot := host(r) + r.URL.Path
+
+	logger.LogAttrs(ctx, slog.LevelDebug, "Making the document",
+		slog.String("importRoot", importRoot), slog.String("vcs", vcs), slog.String("vcsRoot", vcsRoot))
+
+	body, err := templatize(importRoot, vcs, vcsRoot)
 	if err != nil {
-		logger.Printf("Unable to templatize %s: %s", importPath, err)
+		logger.LogAttrs(ctx, slog.LevelError, "Unable to make the document",
+			slog.String("importPath", importPath), slog.Any("error", err))
 		APIErrTemplates.Inc()
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
@@ -197,7 +209,8 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write(body) //nolint:gosec
 	if err != nil {
-		logger.Printf("Error writing body for %s: %s", importPath, err)
+		logger.LogAttrs(ctx, slog.LevelError, "Unable to write the body",
+			slog.String("importPath", importPath), slog.Any("error", err))
 	}
 }
 
@@ -229,19 +242,17 @@ func host(r *http.Request) string {
 	return r.Header.Get(xForwardedHost)
 }
 
-func templatize(importRoot, vcs, vcsRoot string) (body []byte, err error) {
-	logger.Printf("%s %s %s", importRoot, vcs, vcsRoot)
+func templatize(importRoot, vcs, vcsRoot string) ([]byte, error) {
 	d := &data{
 		ImportRoot: importRoot,
 		VCS:        vcs,
 		VCSRoot:    vcsRoot,
 	}
+
 	var buf bytes.Buffer
-	err = tmpl.Execute(&buf, d)
-	if err != nil {
-		return
+	if err := tmpl.Execute(&buf, d); err != nil {
+		return nil, err
 	}
 
-	body = buf.Bytes()
-	return
+	return buf.Bytes(), nil
 }

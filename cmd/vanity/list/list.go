@@ -18,10 +18,8 @@
 package list
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -42,7 +40,7 @@ func init() { //nolint:gochecknoinits
 			Short: listDescription,
 			Long:  listDescription,
 			Args:  cobra.NoArgs,
-			Run:   listCmd,
+			RunE:  listCmd,
 		}
 
 		flags := cmd.Flags()
@@ -52,10 +50,9 @@ func init() { //nolint:gochecknoinits
 	})
 }
 
-func listCmd(cmd *cobra.Command, _ []string) {
-	err := viper.BindPFlags(cmd.Flags())
-	if err != nil {
-		glog.Exitf("Unable to bind viper to command line flags: %s", err)
+func listCmd(cmd *cobra.Command, _ []string) error {
+	if err := viper.BindPFlags(cmd.Flags()); err != nil {
+		return fmt.Errorf("unable to bind viper to the command line flags: %w", err)
 	}
 
 	var c vanity.Consumer
@@ -66,12 +63,15 @@ func listCmd(cmd *cobra.Command, _ []string) {
 		c = cli.NewPlainConsumer()
 	}
 
-	err = backends.Get().List(context.Background(), c)
-	if err != nil {
-		glog.Exitf("Unable to obtain list: %s", err)
+	ctx := cmd.Context()
+
+	if err := backends.Get().List(ctx, c); err != nil {
+		return fmt.Errorf("unable to list the vanity URLs: %w", err)
 	}
 
 	if outputJSON {
 		fmt.Println("\n]")
 	}
+
+	return nil
 }

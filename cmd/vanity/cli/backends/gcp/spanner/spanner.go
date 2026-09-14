@@ -20,8 +20,8 @@ package spanner
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
@@ -29,7 +29,6 @@ import (
 	"l7e.io/vanity/cmd/vanity/cli"
 	"l7e.io/vanity/cmd/vanity/cli/backends"
 	"l7e.io/vanity/cmd/vanity/cli/backends/gcp"
-	"l7e.io/vanity/cmd/vanity/cli/log"
 	be "l7e.io/vanity/pkg/gcp/spanner"
 )
 
@@ -63,9 +62,9 @@ var Command = &cobra.Command{
 	Short: commandDescription,
 	Long:  commandDescription,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		glog.V(log.Debug).Infoln("Set backend w/ spanner")
-		err := viper.BindPFlags(cmd.Flags())
-		if err != nil {
+		slog.Debug("Set the backend to spanner")
+
+		if err := viper.BindPFlags(cmd.Flags()); err != nil {
 			return fmt.Errorf(unableToBind, err)
 		}
 
@@ -75,8 +74,7 @@ var Command = &cobra.Command{
 			return fmt.Errorf(unableToInstantiate, err)
 		}
 
-		err = beHelp.gh.AddInterceptors()
-		if err != nil {
+		if err := beHelp.gh.AddInterceptors(); err != nil {
 			return err
 		}
 
@@ -86,7 +84,7 @@ var Command = &cobra.Command{
 		return nil
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-		glog.V(log.Debug).Infoln("Clean backend of spanner")
+		slog.Debug("Clean the spanner backend")
 		defer func() {
 			backends.Set(saved)
 		}()
@@ -112,7 +110,7 @@ func (h *helper) getBackend() (vanity.Backend, error) {
 	if !ok {
 		return nil, errUnableToGetDatabase
 	}
-	glog.V(log.Debug).Infof("database: %s", db)
+	slog.Debug("Read the database", slog.String("database", db))
 
 	options, err := h.getClientOptions()
 	if err != nil {

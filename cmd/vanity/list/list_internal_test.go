@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"l7e.io/vanity/apitest"
 	"l7e.io/vanity/cmd/vanity/cli/backends"
@@ -36,9 +37,13 @@ func TestList(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	var err error
+
 	out := capturer.CaptureOutput(func() {
-		listCmd(cmd, []string{})
+		err = listCmd(cmd, []string{})
 	})
+
+	require.NoError(t, err)
 
 	assert.Equal(t, "a.com/b,vcs,vcsPath\n", out)
 }

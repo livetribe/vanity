@@ -82,8 +82,7 @@ key = "%s"
 		return err
 	}
 
-	err = w.Flush()
-	if err != nil {
+	if err := w.Flush(); err != nil {
 		return err
 	}
 

@@ -76,28 +76,3 @@ type ConsumerFunc func(context context.Context, importPath, vcs, vcsPath string)
 func (f ConsumerFunc) OnEntry(context context.Context, importPath, vcs, vcsPath string) {
 	f(context, importPath, vcs, vcsPath)
 }
-
-// logger is the error log of this package. The default logger discards every
-// message.
-var logger Logger = LoggerFunc(func(format string, v ...interface{}) {})
-
-// Logger describes functions available for logging purposes.
-type Logger interface {
-	Printf(format string, v ...interface{})
-}
-
-// SetLogger sets the logger used by vanity package's error log.
-func SetLogger(l Logger) {
-	logger = l
-}
-
-// The LoggerFunc type is an adapter to allow the use of
-// ordinary functions as Loggers. If f is a function
-// with the appropriate signature, LoggerFunc(f) is a
-// Logger that calls f.
-type LoggerFunc func(string, ...interface{})
-
-// Printf calls f(w, r).
-func (f LoggerFunc) Printf(format string, v ...interface{}) {
-	f(format, v...)
-}

@@ -18,14 +18,13 @@
 package remove
 
 import (
-	"context"
+	"fmt"
+	"log/slog"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
 
 	"l7e.io/vanity/cmd/vanity/cli/backends"
 	"l7e.io/vanity/cmd/vanity/cli/backends/helpers"
-	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
 const removeDescription = "Remove vanity URL"
@@ -37,20 +36,23 @@ func init() { //nolint:gochecknoinits
 			Short: removeDescription,
 			Long:  removeDescription,
 			Args:  cobra.ExactArgs(1),
-			Run:   removeCmd,
+			RunE:  removeCmd,
 		}
 	})
 }
 
-func removeCmd(_ *cobra.Command, args []string) {
+func removeCmd(cmd *cobra.Command, args []string) error {
 	importPath := args[0]
 
-	glog.V(log.Debug).Infof("Removing %s...", importPath)
+	slog.Debug("Removing the vanity URL", slog.String("importPath", importPath))
 
-	err := backends.Get().Remove(context.Background(), importPath)
-	if err != nil {
-		glog.Exitf("Unable to remove %s: %s", importPath, err)
+	ctx := cmd.Context()
+
+	if err := backends.Get().Remove(ctx, importPath); err != nil {
+		return fmt.Errorf("unable to remove %s: %w", importPath, err)
 	}
 
-	glog.V(log.Debug).Info("Removed")
+	slog.Debug("Removed the vanity URL")
+
+	return nil
 }

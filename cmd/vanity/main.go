@@ -18,14 +18,11 @@ package main
 
 import (
 	"errors"
-	"flag"
+	"log/slog"
+	"os"
 	"strings"
 
-	"github.com/golang/glog"
-	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-
-	"l7e.io/vanity"
 
 	_ "l7e.io/vanity/cmd/vanity/add"
 	"l7e.io/vanity/cmd/vanity/cli"
@@ -38,13 +35,12 @@ import (
 	_ "l7e.io/vanity/cmd/vanity/server"
 )
 
-func init() { //nolint:gochecknoinits
-	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+// exitCode is the status that main gives to the operating system when the
+// command fails.
+const exitCode = 1
 
-	// set vanity logger to glog.Errorf()
-	vanity.SetLogger(vanity.LoggerFunc(func(format string, v ...interface{}) {
-		glog.Errorf(format, v...)
-	}))
+func init() { //nolint:gochecknoinits
+	log.Init(os.Stderr)
 
 	viper.SetEnvPrefix("vanity")
 	viper.SetConfigType("toml")
@@ -56,15 +52,20 @@ func init() { //nolint:gochecknoinits
 }
 
 func main() {
-	_ = flag.CommandLine.Parse([]string{}) // used to turn off noisy glog warnings
+	if err := run(); err != nil {
+		slog.Error("Unable to run the command", slog.Any("error", err))
+		os.Exit(exitCode)
+	}
+}
 
+// run reads the configuration. Then run runs the command that the arguments
+// name.
+func run() error {
 	if err := setupViper(); err != nil {
-		glog.Exit(err)
+		return err
 	}
 
-	if err := cli.RootCmd.Execute(); err != nil {
-		glog.Exit(err)
-	}
+	return cli.RootCmd.Execute()
 }
 
 func setupViper() error {
@@ -72,9 +73,8 @@ func setupViper() error {
 
 	err := viper.ReadInConfig()
 
-	var cnf viper.ConfigFileNotFoundError
-	if errors.As(err, &cnf) {
-		glog.V(log.Debug).Info(cnf.Error())
+	if cnf, ok := errors.AsType[viper.ConfigFileNotFoundError](err); ok {
+		slog.Debug("No configuration file", slog.Any("error", cnf))
 
 		return nil
 	}

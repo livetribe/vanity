@@ -17,8 +17,10 @@
 package vanity_test
 
 import (
+	"bytes"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -31,6 +33,26 @@ import (
 )
 
 var errNotHealthy = fmt.Errorf("not healthy")
+
+// captureLog makes the default logger write to a buffer. captureLog returns
+// the buffer. At the end of the test, captureLog sets the default logger that
+// the test had before.
+func captureLog(t *testing.T) *bytes.Buffer {
+	t.Helper()
+
+	var buf bytes.Buffer
+
+	handler := slog.NewTextHandler(&buf, nil)
+	previous := slog.Default()
+
+	slog.SetDefault(slog.New(handler))
+
+	t.Cleanup(func() {
+		slog.SetDefault(previous)
+	})
+
+	return &buf
+}
 
 func TestHandler_ServeHTTP_put(t *testing.T) {
 	prometheusReset()
@@ -103,6 +125,8 @@ func TestHandler_ServeHTTP_get_not_found(t *testing.T) {
 func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
 	prometheusReset()
 
+	buf := captureLog(t)
+
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Healthy: errNotHealthy})
 
 	w := httptest.NewRecorder()
@@ -111,6 +135,8 @@ func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+	assert.Contains(t, buf.String(), "Unable to get the import path")
+	assert.Contains(t, buf.String(), "importPath=a.com/z")
 
 	prometheusCheck(t, 1, 1, 0, 0)
 }

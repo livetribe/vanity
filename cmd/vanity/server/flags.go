@@ -18,10 +18,10 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -30,6 +30,7 @@ import (
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli/backends/helpers"
 	"l7e.io/vanity/cmd/vanity/server/interceptors"
+	"l7e.io/vanity/internal/logging"
 )
 
 func init() { //nolint:gochecknoinits
@@ -39,7 +40,7 @@ func init() { //nolint:gochecknoinits
 			Short: "Serve port URLs",
 			Long:  "Serve port URLs using [command] for a backend port store",
 			Args:  cobra.NoArgs,
-			Run:   serverCmd,
+			RunE:  serverCmd,
 		}
 
 		initFlags(cmd)
@@ -89,10 +90,12 @@ func (h *helper) getHTTPServer(api vanity.Backend) *http.Server {
 
 	addr := fmt.Sprintf("%s:%d", nic, port)
 
-	glog.Infof("port configured to listen to %s", addr)
+	slog.Info("Configured the vanity port", slog.String("address", addr))
+
+	handler := logging.Middleware(vanity.NewVanityHandler(api))
 
 	mux := http.NewServeMux()
-	mux.Handle("/", interceptors.WrapHandler(vanity.NewVanityHandler(api)))
+	mux.Handle("/", interceptors.WrapHandler(handler))
 
 	return &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: readHeaderTimeout}
 }
@@ -104,7 +107,7 @@ func (h *helper) getHealthz(handler http.Handler) *http.Server {
 
 	addr := fmt.Sprintf("%s:%d", nic, port)
 
-	glog.Infof("healthz configured to listen to %s/healthz", addr)
+	slog.Info("Configured the healthz port", slog.String("address", addr+"/healthz"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", handler)
@@ -119,7 +122,7 @@ func (h *helper) getReadyz(handler http.Handler) *http.Server {
 
 	addr := fmt.Sprintf("%s:%d", nic, port)
 
-	glog.Infof("readyz configured to listen to %s/readyz", addr)
+	slog.Info("Configured the readyz port", slog.String("address", addr+"/readyz"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/readyz", handler)
@@ -134,7 +137,7 @@ func (h *helper) getMetrics() *http.Server {
 
 	addr := fmt.Sprintf("%s:%d", nic, port)
 
-	glog.Infof("metrics configured to listen to %s/metrics", addr)
+	slog.Info("Configured the metrics port", slog.String("address", addr+"/metrics"))
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())

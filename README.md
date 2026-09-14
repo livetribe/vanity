@@ -20,8 +20,9 @@ Go vanity server
 - Redirects browsers to `pkg.go.dev`, configurable to `godoc.org`
 - Redirects Go tool to VCS
 - Redirects HTTP to HTTPS
-- Configurable logger which is fully compatible with standard log package.
-  Stdout is default.
+- Configurable `log/slog` logger. The handler takes the logger from the request
+  context, and falls back to `slog.Default()`. The `vanity` command writes
+  Cloud Logging structured JSON to stderr, at the level that `--log-level` sets.
 
 ## Installation
 ```

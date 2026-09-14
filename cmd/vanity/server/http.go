@@ -19,10 +19,9 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"time"
-
-	"github.com/golang/glog"
 
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli/log"
@@ -38,12 +37,12 @@ func newHandlerCheck(backend vanity.Backend, kind string) http.Handler {
 			ctx, cancel := context.WithTimeout(r.Context(), checkTimeout)
 			defer cancel()
 
-			err := backend.Healthz(ctx)
-			if err != nil {
-				glog.Error(err)
+			if err := backend.Healthz(ctx); err != nil {
+				slog.ErrorContext(ctx, "Unable to check the backend",
+					slog.String("kind", kind), slog.Any("error", err))
 				http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 			} else {
-				glog.V(log.Trace).Infof("%s-check...", kind)
+				slog.Log(ctx, log.Trace, "Checked the backend", slog.String("kind", kind))
 				w.WriteHeader(http.StatusOK)
 			}
 		})

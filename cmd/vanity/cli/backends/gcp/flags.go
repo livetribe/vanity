@@ -21,16 +21,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/api/option"
 
 	"l7e.io/vanity/cmd/vanity/cli"
-	"l7e.io/vanity/cmd/vanity/cli/log"
 	"l7e.io/vanity/cmd/vanity/server/interceptors"
 	"l7e.io/vanity/pkg/gcp"
 )
@@ -89,7 +88,7 @@ func (h *Helper) AddInterceptors() error {
 
 	if glb {
 		interceptors.RegisterInterceptor(gcp.GLB)
-		glog.V(log.Debug).Info("Added GLB interceptor")
+		slog.Debug("Added the GLB interceptor")
 	}
 	return nil
 }
@@ -119,7 +118,8 @@ func (h *Helper) CollectAPIKeyOption(options []option.ClientOption) []option.Cli
 		return options
 	}
 
-	glog.V(log.Debug).Infof("Google API key (sha1): %s", cli.SHA1FromString(key))
+	sha1 := cli.SHA1FromString(key)
+	slog.Debug("Read the Google API key", slog.String("sha1", sha1))
 
 	return append(options, option.WithAPIKey(key))
 }
@@ -146,7 +146,7 @@ func (h *Helper) CollectCredentialsFileOption(options []option.ClientOption) ([]
 		return nil, err
 	}
 
-	glog.V(log.Debug).Infof("Google API credentials file: %s", cf)
+	slog.Debug("Read the Google API credentials file", slog.String("file", cf))
 
 	return append(options, option.WithAuthCredentialsFile(credType, cf)), nil
 }
@@ -175,7 +175,7 @@ func (h *Helper) CollectCredentialsOption(options []option.ClientOption) ([]opti
 		return nil, err
 	}
 
-	glog.V(log.Debug).Infof("Google API credentials (sha1): %s", sha1)
+	slog.Debug("Read the Google API credentials", slog.String("sha1", sha1))
 
 	return append(options, option.WithAuthCredentialsJSON(credType, cj)), nil
 }

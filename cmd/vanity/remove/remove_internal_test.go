@@ -22,6 +22,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"l7e.io/vanity/apitest"
 	"l7e.io/vanity/cmd/vanity/cli/backends"
@@ -35,6 +36,6 @@ func TestRemove(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	removeCmd(cmd, []string{"a.com/b"})
+	require.NoError(t, removeCmd(cmd, []string{"a.com/b"}))
 	assert.Empty(t, backends.Get().(*apitest.MockBackend).Urls["a.com/b"])
 }
