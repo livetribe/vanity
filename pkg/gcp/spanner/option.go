@@ -82,7 +82,7 @@ func collectSettings(opts ...BackendOption) *backendSettings {
 	bs := &backendSettings{
 		table: DefaultTable,
 		config: &spanner.ClientConfig{
-			NumChannels: DefaultNumChannels,
+			NumChannels: DefaultNumChannels, //nolint:staticcheck
 		},
 	}
 

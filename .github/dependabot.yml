@@ -28,3 +28,5 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # yama v0.3.0 removes the v0.2.0 watcher API.
+      - dependency-name: "l7e.io/yama"

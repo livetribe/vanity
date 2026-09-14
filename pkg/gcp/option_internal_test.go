@@ -24,7 +24,7 @@ import (
 )
 
 func TestWithClientOptions_Apply(t *testing.T) {
-	c := option.WithCredentialsFile("")
+	c := option.WithUserAgent("test")
 	o := WithClientOptions([]option.ClientOption{c})
 
 	settings := &APISettings{}

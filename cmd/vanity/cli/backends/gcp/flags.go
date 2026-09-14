@@ -127,7 +127,7 @@ func (h *Helper) CollectCredentialsFileOption(options []option.ClientOption) ([]
 
 	glog.V(log.Debug).Infof("Google API credentials file: %s", cf)
 
-	return append(options, option.WithCredentialsFile(cf)), nil
+	return append(options, option.WithCredentialsFile(cf)), nil //nolint:staticcheck
 }
 
 // CollectCredentialsOption adds the Google credentials, if passed as a
@@ -151,5 +151,5 @@ func (h *Helper) CollectCredentialsOption(options []option.ClientOption) ([]opti
 
 	glog.V(log.Debug).Infof("Google API credentials (sha1): %s", sha1)
 
-	return append(options, option.WithCredentialsJSON(cj)), nil
+	return append(options, option.WithCredentialsJSON(cj)), nil //nolint:staticcheck
 }
