@@ -79,15 +79,15 @@ func (w withClientOptions) Apply(o *backendSettings) {
 }
 
 func collectSettings(opts ...BackendOption) *backendSettings {
-	bs := &backendSettings{
-		table: DefaultTable,
-		config: &spanner.ClientConfig{
-			NumChannels: DefaultNumChannels, //nolint:staticcheck
-		},
-	}
+	bs := &backendSettings{table: DefaultTable}
 
 	for _, o := range opts {
 		o.Apply(bs)
+	}
+
+	if bs.config == nil {
+		pool := option.WithGRPCConnectionPool(DefaultNumChannels)
+		bs.options = append([]option.ClientOption{pool}, bs.options...)
 	}
 
 	return bs
