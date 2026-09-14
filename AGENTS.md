@@ -20,7 +20,7 @@ grouping — isn't linter-checkable and depends on the `/code-review` pass
 below.
 
 This module targets the Go version declared in `go.mod`, and CI builds the
-versions and platforms in `.travis.yml`. Do not use language or
+versions in `.github/workflows/ci.yml`. Do not use language or
 standard-library features newer than the declared minimum.
 
 ## Before declaring work complete
