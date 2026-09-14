@@ -19,7 +19,9 @@ package gcp
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/golang/glog"
 	"github.com/pkg/errors"
@@ -41,8 +43,17 @@ const (
 )
 
 var (
-	errFileDoesNotExist = fmt.Errorf("file does not exist")
+	errFileDoesNotExist       = fmt.Errorf("file does not exist")
+	errUnsupportedCredentials = fmt.Errorf("unsupported credentials")
 )
+
+// supportedCredentialsTypes maps the `type` field of a Google credentials JSON
+// document to its option.CredentialsType. It holds only the types that the
+// Google API client validates.
+var supportedCredentialsTypes = map[string]option.CredentialsType{
+	"service_account": option.ServiceAccount,
+	"authorized_user": option.AuthorizedUser,
+}
 
 // InitFlags initializes the Cobra command with flags common to Google API clients.
 func InitFlags(cmd *cobra.Command) {
@@ -125,9 +136,19 @@ func (h *Helper) CollectCredentialsFileOption(options []option.ClientOption) ([]
 		return options, errFileDoesNotExist
 	}
 
+	cj, err := os.ReadFile(cf)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to read %s", credentialsFile)
+	}
+
+	credType, err := credentialsType(cj)
+	if err != nil {
+		return nil, err
+	}
+
 	glog.V(log.Debug).Infof("Google API credentials file: %s", cf)
 
-	return append(options, option.WithCredentialsFile(cf)), nil //nolint:staticcheck
+	return append(options, option.WithAuthCredentialsFile(credType, cf)), nil
 }
 
 // CollectCredentialsOption adds the Google credentials, if passed as a
@@ -149,7 +170,32 @@ func (h *Helper) CollectCredentialsOption(options []option.ClientOption) ([]opti
 		return nil, err
 	}
 
+	credType, err := credentialsType(cj)
+	if err != nil {
+		return nil, err
+	}
+
 	glog.V(log.Debug).Infof("Google API credentials (sha1): %s", sha1)
 
-	return append(options, option.WithCredentialsJSON(cj)), nil //nolint:staticcheck
+	return append(options, option.WithAuthCredentialsJSON(credType, cj)), nil
+}
+
+// credentialsType reports the Google credential type that the JSON document
+// declares. It accepts a service account and an authorized user. It refuses the
+// other types, which the Google API client loads without validation.
+func credentialsType(cj []byte) (option.CredentialsType, error) {
+	var doc struct {
+		Type string `json:"type"`
+	}
+
+	if err := json.Unmarshal(cj, &doc); err != nil {
+		return option.ServiceAccount, errors.Wrap(err, "unable to parse the credentials")
+	}
+
+	credType, supported := supportedCredentialsTypes[doc.Type]
+	if !supported {
+		return option.ServiceAccount, errors.Wrapf(errUnsupportedCredentials, "type %q", doc.Type)
+	}
+
+	return credType, nil
 }
