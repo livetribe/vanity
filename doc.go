@@ -42,7 +42,7 @@ a TOML file, Google Cloud Datastore, and Google Cloud Spanner.
 
 This package exports Prometheus collectors. They count the calls to the
 Backend, the errors, the not-found results, the documentation redirects, and
-the template errors. SummaryVec records the duration of each Backend call.
+the template errors.
 
 The handler writes its messages to a log/slog logger from the request context.
 The handler uses slog.Default() when the request context has no logger.

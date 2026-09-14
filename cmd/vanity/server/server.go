@@ -43,17 +43,20 @@ func serverCmd(cmd *cobra.Command, _ []string) error {
 
 	svrHelp := newHelper(cmd)
 
-	vanity := svrHelp.getHTTPServer(backends.Get())
+	be := backends.Get()
+	be = backends.WrapWithPrometheus(be)
 
-	healthz := svrHelp.getHealthz(newHandlerCheck(backends.Get(), "healthz"))
-	readyz := svrHelp.getReadyz(newHandlerCheck(backends.Get(), "readyz"))
+	vanity := svrHelp.getHTTPServer(be)
+
+	healthz := svrHelp.getHealthz(newHandlerCheck(be, "healthz"))
+	readyz := svrHelp.getReadyz(newHandlerCheck(be, "readyz"))
 
 	metrics := svrHelp.getMetrics()
 
 	watcher := yama.NewWatcher(
 		yama.WatchingSignals(syscall.SIGINT, syscall.SIGTERM),
 		yama.WithTimeout(closeTimeout),
-		yama.WithClosers(backends.Get(), vanity, healthz, readyz, metrics))
+		yama.WithClosers(be, vanity, healthz, readyz, metrics))
 
 	go serve(metrics, watcher)
 	go serve(healthz, watcher)

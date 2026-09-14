@@ -15,7 +15,6 @@
  *
  */
 
-// Package backends contains the shared implementation of vanity.Backend.
 package backends
 
 import (

@@ -107,14 +107,6 @@ var (
 		Name:      "error_templates_total",
 		Help:      "The total templating errors",
 	})
-
-	// SummaryVec is a Prometheus histogram to track the Backend duration in seconds.
-	SummaryVec = promauto.NewHistogram(prometheus.HistogramOpts{
-		Namespace: metricNamespace,
-		Subsystem: metricSubsystem,
-		Name:      "duration_seconds",
-		Help:      "The Backend duration in seconds",
-	})
 )
 
 // Handler is a http.Handler that services vanity URLs using api
@@ -164,7 +156,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	importPath := host(r) + root
 
-	vcs, repoRoot, err := s.timedGet(ctx, importPath)
+	vcs, repoRoot, err := s.api.Get(ctx, importPath)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			APINotFound.Inc()
@@ -220,18 +212,6 @@ func (s *Handler) docURL() string {
 	}
 
 	return s.DocURL
-}
-
-func (s *Handler) timedGet(ctx context.Context, importPath string) (vcs, vcsPath string, err error) {
-	start := time.Now()
-	defer func() {
-		elapsed := time.Since(start)
-		SummaryVec.Observe(elapsed.Seconds())
-	}()
-
-	vcs, vcsPath, err = s.api.Get(ctx, importPath)
-
-	return
 }
 
 func host(r *http.Request) string {
