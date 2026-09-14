@@ -22,18 +22,16 @@ This in-memory backend is an implementation of vanity.Backend.  Vanity URL
 configurations are stored in-memory.  The implementation provides a convenience
 method for adding configurations without having to check for errors.
 
-
-Creating an In-Memory Backend
+# Creating an In-Memory Backend
 
 To create an in-memory backend instance:
 
-    be := memory.NewInMemoryAPI()
-    defer be.Close()
+	be := memory.NewInMemoryAPI()
+	defer be.Close()
 
 Remember to close the backend instance after use.
 
-
-Using the AddEntry Convenience Method
+# Using the AddEntry Convenience Method
 
 The implementation provides a convenience method for adding configurations
 without having to pass a context.Context instance and check for errors.
@@ -41,10 +39,9 @@ without having to pass a context.Context instance and check for errors.
 Calling AddEntry on a closed instance has no effect; the call is virtually
 ignored.
 
-    be := memory.NewInMemoryAPI()
-    defer be.Close()
+	be := memory.NewInMemoryAPI()
+	defer be.Close()
 
-    be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
-
+	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 */
 package memory // import "l7e.io/vanity/pkg/memory"

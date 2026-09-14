@@ -5,25 +5,17 @@ os:
 sudo: false
 language: go
 go_import_path: l7e.io/vanity
-# Force-enable Go modules. Also force go to use the code in vendor/
-# These will both be unnecessary when Go 1.14 lands.
-env: GO111MODULE=on
 go:
-  - 1.11.x
-  - 1.12.x
-  - 1.13.x
-  - 1.14.x
-  - 1.15.x
+  - 1.27.x
 before_install:
   - >
-    if [ $TRAVIS_GO_VERSION =~ ^1\.13 -a "$TRAVIS_OS_NAME" = 'linux' ]; then
-      go get github.com/golangci/golangci-lint/cmd/golangci-lint
+    if [ $TRAVIS_GO_VERSION =~ ^1\.27 -a "$TRAVIS_OS_NAME" = 'linux' ]; then
+      go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
     fi
-  - go install github.com/mattn/goveralls
+  - go install github.com/mattn/goveralls@latest
 script:
   - >
-    if [ $TRAVIS_GO_VERSION =~ ^1\.13 -a "$TRAVIS_OS_NAME" = 'linux' ]; then
-      $GOPATH/bin/golangci-lint run || true; # https://github.com/golangci/golangci-lint/issues/824
+    if [ $TRAVIS_GO_VERSION =~ ^1\.27 -a "$TRAVIS_OS_NAME" = 'linux' ]; then
       $GOPATH/bin/golangci-lint run ;
     fi
   - $GOPATH/bin/goveralls -service=travis-ci -race -v

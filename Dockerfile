@@ -16,9 +16,9 @@ FROM alpine:latest as certs
 
 RUN apk --update add ca-certificates
 
-FROM golang:1.13 as builder
+FROM golang:1.27 as builder
 
-RUN GO111MODULE=on go get github.com/ahmetb/govvv@master
+RUN go install github.com/ahmetb/govvv@master
 
 WORKDIR /go/src/l7e.io/vanity
 
@@ -26,7 +26,7 @@ COPY . .
 
 ARG VERSION="<unspecified>"
 
-RUN CGO_ENABLED=0 GOBIN=/go/bin GOOS=linux GO111MODULE=on go install -ldflags="$(govvv -flags -version $VERSION -pkg l7e.io/vanity/cmd/vanity/cli)" l7e.io/vanity/cmd/vanity
+RUN CGO_ENABLED=0 GOBIN=/go/bin GOOS=linux go install -ldflags="$(govvv -flags -version $VERSION -pkg l7e.io/vanity/cmd/vanity/cli)" l7e.io/vanity/cmd/vanity
 
 FROM alpine:3.10
 

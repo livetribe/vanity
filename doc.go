@@ -24,18 +24,17 @@ introduction to Cloud Spanner and additional help on using this API.
 See https://godoc.org/cloud.google.com/go for authentication, timeouts,
 connection pooling and similar aspects of this package.
 
-
-Creating a Client
+# Creating a Client
 
 To start working with this package, create a client that refers to the database
 of interest:
 
-    ctx := context.Background()
-    client, err := spanner.NewClient(ctx, "projects/P/instances/I/databases/D")
-    if err != nil {
-        // TODO: Handle error.
-    }
-    defer client.Close()
+	ctx := context.Background()
+	client, err := spanner.NewClient(ctx, "projects/P/instances/I/databases/D")
+	if err != nil {
+	    // TODO: Handle error.
+	}
+	defer client.Close()
 
 Remember to close the client after use to free up the sessions in the session
 pool.

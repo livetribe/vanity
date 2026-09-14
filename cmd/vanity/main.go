@@ -71,7 +71,7 @@ func setupViper() error {
 
 	err := viper.ReadInConfig()
 	if cnf, ok := err.(viper.ConfigFileNotFoundError); ok {
-		glog.V(log.Debug).Infof(cnf.Error())
+		glog.V(log.Debug).Info(cnf.Error())
 
 		return nil
 	}

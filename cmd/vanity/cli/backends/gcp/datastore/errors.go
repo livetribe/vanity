@@ -1,4 +1,5 @@
-// +build !go1.13
+//go:build go1.13
+// +build go1.13
 
 /*
  * Copyright (c) 2020 the original author or authors.
@@ -20,6 +21,6 @@
 package datastore
 
 const (
-	unableToBind        = "unable to bind viper to command line flags: %s"
-	unableToInstantiate = "unable to instantiate Datastore backend: %s"
+	unableToBind        = "unable to bind viper to command line flags: %w"
+	unableToInstantiate = "unable to instantiate Datastore backend: %w"
 )

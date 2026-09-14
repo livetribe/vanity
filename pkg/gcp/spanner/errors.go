@@ -12,12 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !go1.13
-
 package spanner
 
 const (
-	unableToRetrieve       = "unable to retrieve record for %s: %s"
-	unableToExtractVcs     = "unable to extract vcs for %s: %s"
-	unableToExtractVcsPath = "unable to extract vcsPath for %s: %s"
+	unableToRetrieve       = "unable to retrieve record for %s: %w"
+	unableToExtractVcs     = "unable to extract vcs for %s: %w"
+	unableToExtractVcsPath = "unable to extract vcsPath for %s: %w"
 )

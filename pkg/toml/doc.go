@@ -21,8 +21,7 @@ This in-memory backend is an R/O implementation of vanity.Backend which is initi
 using TOML, https://github.com/toml-lang/toml.  The vanity URL configurations are
 stored in-memory.
 
-
-TOML Configuration
+# TOML Configuration
 
 Vanity entries are specified via an array of tables, https://github.com/toml-lang/toml#array-of-tables.
 Each table has the following keys:
@@ -46,27 +45,26 @@ The TOML configuration can be passed in during construction by passing in the ap
 option to the NewTOMLBackend method to specify file, Reader, string, or byte array content.
 Specifying multiple content, e.g. both a file and string results in undefined behavior.
 
-Creating a TOML-based Backend
+# Creating a TOML-based Backend
 
 To create a backend instance:
 
-    be := toml.NewTOMLBackend(InTable("obj"), FromString(`
-    [[obj]]
-    import_path = "l7e.io/one"
-    vcs = "git"
-    vcs_path = "https://github.com/livetribe/one"
-    [[obj]]
-    import_path = "l7e.io/two"
-    vcs = "git"
-    vcs_path = "https://github.com/livetribe/two"
-    [[obj]]
-    import_path = "l7e.io/three"
-    vcs = "git"
-    vcs_path = "https://github.com/livetribe/three"
-    `))
-    defer be.Close()
+	be := toml.NewTOMLBackend(InTable("obj"), FromString(`
+	[[obj]]
+	import_path = "l7e.io/one"
+	vcs = "git"
+	vcs_path = "https://github.com/livetribe/one"
+	[[obj]]
+	import_path = "l7e.io/two"
+	vcs = "git"
+	vcs_path = "https://github.com/livetribe/two"
+	[[obj]]
+	import_path = "l7e.io/three"
+	vcs = "git"
+	vcs_path = "https://github.com/livetribe/three"
+	`))
+	defer be.Close()
 
 Remember to close the backend instance after use.
-
 */
 package toml // import "l7e.io/vanity/pkg/toml"
