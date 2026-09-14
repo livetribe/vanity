@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/pelletier/go-toml"
+
 	"l7e.io/vanity"
 )
 
@@ -116,34 +116,15 @@ func (b bytesOption) Apply(o *settings) {
 }
 
 // NewTOMLBackend creates a new TOML-backend using the specified options.
-func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
+func NewTOMLBackend(options ...Option) (vanity.Backend, error) {
 	s := settings{Tables: []string{}}
 	for _, o := range options {
 		o.Apply(&s)
 	}
 
-	var b []byte
-	if s.Bytes != nil {
-		b = s.Bytes
-	} else if s.String != "" {
-		b = []byte(s.String)
-	} else if s.Path != "" {
-		file, err := os.Open(s.Path)
-		if err != nil {
-			return nil, err
-		}
-		defer func() { _ = file.Close() }()
-		b, err = ioutil.ReadAll(file)
-		if err != nil {
-			return nil, err
-		}
-	} else if s.Reader != nil {
-		b, err = ioutil.ReadAll(s.Reader)
-		if err != nil {
-			return
-		}
-	} else {
-		return nil, errNoContentSpecified
+	b, err := readContent(&s)
+	if err != nil {
+		return nil, err
 	}
 
 	tree, err := toml.LoadBytes(b)
@@ -165,26 +146,61 @@ func NewTOMLBackend(options ...Option) (be vanity.Backend, err error) {
 		return nil, errTableDoesNotExist
 	}
 
-	entries := make(map[string]*entry)
-	for _, z := range array {
-		var e = &entry{}
-		err = z.Unmarshal(e)
-		if err != nil {
-			return nil, err
-		}
-		if e.ImportPath == "" {
-			return nil, errImportPathNotSpecified
-		}
-		if e.Vcs == "" {
-			return nil, errVcsNotSpecified
-		}
-		if e.VcsPath == "" {
-			return nil, errVcsPathNotSpecified
-		}
-		entries[e.ImportPath] = e
+	entries, err := readEntries(array)
+	if err != nil {
+		return nil, err
 	}
 
 	return &tomlBE{entries: entries}, nil
+}
+
+// readContent returns the TOML content that the settings select. The settings
+// supply the content as bytes, as a string, as a file path, or as a reader.
+func readContent(s *settings) ([]byte, error) {
+	switch {
+	case s.Bytes != nil:
+		return s.Bytes, nil
+	case s.String != "":
+		return []byte(s.String), nil
+	case s.Path != "":
+		file, err := os.Open(s.Path)
+		if err != nil {
+			return nil, err
+		}
+		defer func() { _ = file.Close() }()
+
+		return io.ReadAll(file)
+	case s.Reader != nil:
+		return io.ReadAll(s.Reader)
+	default:
+		return nil, errNoContentSpecified
+	}
+}
+
+// readEntries converts the TOML trees to entries, keyed by import path. It
+// returns an error when a tree omits a required field.
+func readEntries(array []*toml.Tree) (map[string]*entry, error) {
+	entries := make(map[string]*entry)
+
+	for _, z := range array {
+		e := &entry{}
+		if err := z.Unmarshal(e); err != nil {
+			return nil, err
+		}
+
+		switch {
+		case e.ImportPath == "":
+			return nil, errImportPathNotSpecified
+		case e.Vcs == "":
+			return nil, errVcsNotSpecified
+		case e.VcsPath == "":
+			return nil, errVcsPathNotSpecified
+		}
+
+		entries[e.ImportPath] = e
+	}
+
+	return entries, nil
 }
 
 func (s *tomlBE) Close() error {
@@ -194,15 +210,7 @@ func (s *tomlBE) Close() error {
 	return nil
 }
 
-func (s *tomlBE) check() error {
-	// must not hold a lock
-	if s.closed {
-		return vanity.ErrAlreadyClosed
-	}
-	return nil
-}
-
-func (s *tomlBE) Get(_ context.Context, importPath string) (string, string, error) {
+func (s *tomlBE) Get(_ context.Context, importPath string) (vcs, vcsPath string, err error) {
 	if err := s.check(); err != nil {
 		return "", "", err
 	}
@@ -211,6 +219,7 @@ func (s *tomlBE) Get(_ context.Context, importPath string) (string, string, erro
 	if !found {
 		return "", "", vanity.ErrNotFound
 	}
+
 	return e.Vcs, e.VcsPath, nil
 }
 
@@ -246,5 +255,14 @@ func (s *tomlBE) List(ctx context.Context, consumer vanity.Consumer) error {
 }
 
 func (s *tomlBE) Healthz(_ context.Context) error {
+	return nil
+}
+
+// check reports whether the caller closed this Backend.
+func (s *tomlBE) check() error {
+	if s.closed {
+		return vanity.ErrAlreadyClosed
+	}
+
 	return nil
 }

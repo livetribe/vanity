@@ -208,7 +208,7 @@ func TestInMemory_List_Timeout(t *testing.T) {
 	be.AddEntry("l7e.io/vanity", "git", "https://github.com/livetribe/vanity")
 	be.AddEntry("m4o.io/pbf", "git", "https://github.com/magurl/pbf")
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*10) // nolint
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*10) //nolint
 
 	err := be.List(ctx,
 		vanity.ConsumerFunc(func(_ context.Context, _, _, _ string) {

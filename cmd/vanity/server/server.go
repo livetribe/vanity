@@ -18,6 +18,8 @@
 package server
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"syscall"
 	"time"
@@ -29,6 +31,9 @@ import (
 
 	"l7e.io/vanity/cmd/vanity/cli/backends"
 )
+
+// closeTimeout is the time that the watcher gives the closers to finish.
+const closeTimeout = 2 * time.Second
 
 func serverCmd(cmd *cobra.Command, _ []string) {
 	err := viper.BindPFlags(cmd.Flags())
@@ -44,43 +49,30 @@ func serverCmd(cmd *cobra.Command, _ []string) {
 	readyz := svrHelp.getReadyz(newHandlerCheck(backends.Get(), "readyz"))
 
 	metrics := svrHelp.getMetrics()
-	if err != nil {
-		glog.Exitf("Unable create metrics server: %s", err)
-	}
 
 	watcher := yama.NewWatcher(
 		yama.WatchingSignals(syscall.SIGINT, syscall.SIGTERM),
-		yama.WithTimeout(2*time.Second), // nolint
+		yama.WithTimeout(closeTimeout),
 		yama.WithClosers(backends.Get(), vanity, healthz, readyz, metrics))
 
-	go func() {
-		if err = metrics.ListenAndServe(); err != http.ErrServerClosed {
-			glog.Error(err)
-			_ = watcher.Close()
-		}
-	}()
+	go serve(metrics, watcher)
+	go serve(healthz, watcher)
+	go serve(readyz, watcher)
 
-	go func() {
-		if err = healthz.ListenAndServe(); err != http.ErrServerClosed {
-			glog.Error(err)
-			_ = watcher.Close()
-		}
-	}()
-
-	go func() {
-		if err = readyz.ListenAndServe(); err != http.ErrServerClosed {
-			glog.Error(err)
-			_ = watcher.Close()
-		}
-	}()
-
-	if err = vanity.ListenAndServe(); err != http.ErrServerClosed {
-		glog.Error(err)
-		_ = watcher.Close()
-	}
+	serve(vanity, watcher)
 
 	if err = watcher.Wait(); err != nil {
 		glog.Warningf("Shutdown error: %s", err)
 	}
 	glog.Info("Vanity exited")
+}
+
+// serve runs the server until the server stops. It closes the watcher when the
+// server stops with an error.
+func serve(server *http.Server, watcher io.Closer) {
+	err := server.ListenAndServe()
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
+		glog.Error(err)
+		_ = watcher.Close()
+	}
 }

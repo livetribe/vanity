@@ -32,7 +32,7 @@ func TestGLB_normal(t *testing.T) {
 		w.WriteHeader(http.StatusNotFound)
 	})
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "http://a.com", http.NoBody)
 
 	glb := gcp.GLB(h)
 	glb.ServeHTTP(w, r)
@@ -49,7 +49,7 @@ func TestGLB_behind_glb(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "http://a.com", http.NoBody)
 	r.Header.Add("User-Agent", gcp.GCEIngressUserAgent)
 
 	glb := gcp.GLB(h)

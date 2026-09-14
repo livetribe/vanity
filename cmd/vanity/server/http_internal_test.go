@@ -31,7 +31,7 @@ func TestNewHandlerCheck_ok(t *testing.T) {
 	c := newHandlerCheck(&be{healthy: nil}, "")
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "http://a.com", http.NoBody)
 
 	c.ServeHTTP(w, r)
 	resp := w.Result()
@@ -42,7 +42,7 @@ func TestNewHandlerCheck_error(t *testing.T) {
 	c := newHandlerCheck(&be{healthy: errUnhealthy}, "")
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "http://a.com", http.NoBody)
 
 	c.ServeHTTP(w, r)
 	resp := w.Result()

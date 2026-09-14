@@ -18,7 +18,7 @@
 package cli
 
 import (
-	"crypto/sha1" // nolint
+	"crypto/sha1" //nolint:gosec
 	"encoding/hex"
 	"fmt"
 
@@ -34,12 +34,12 @@ func SHA1FromJSON(doc string) (string, error) {
 		return "", errOi
 	}
 	bytes, _ := json.Marshal(v)
-	sum := sha1.Sum(bytes) // nolint
+	sum := sha1.Sum(bytes) //nolint:gosec
 	return hex.EncodeToString(sum[0:]), nil
 }
 
 // SHA1FromString generates a SHA1 hash from a string.
 func SHA1FromString(s string) string {
-	sum := sha1.Sum([]byte(s)) // nolint
+	sum := sha1.Sum([]byte(s)) //nolint:gosec
 	return hex.EncodeToString(sum[0:])
 }

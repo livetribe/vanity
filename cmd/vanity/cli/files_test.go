@@ -17,7 +17,6 @@
 package cli_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -27,7 +26,7 @@ import (
 )
 
 func TestFileExists(t *testing.T) {
-	file, err := ioutil.TempFile("", "prefix")
+	file, err := os.CreateTemp("", "prefix")
 	assert.NoError(t, err)
 	defer os.Remove(file.Name())
 

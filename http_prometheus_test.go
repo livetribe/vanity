@@ -42,12 +42,12 @@ func prometheusSnapshot(c prometheus.Counter) {
 	snapshots[c.Desc().String()] = m.Counter.GetValue()
 }
 
-func prometheusCheck(t *testing.T, calls, errors, notFound, docRedirects, errTemplates int) {
+func prometheusCheck(t *testing.T, calls, errors, notFound, docRedirects int) {
 	prometheusCheckMetric(t, vanity.APICalls, calls)
 	prometheusCheckMetric(t, vanity.APIErrors, errors)
 	prometheusCheckMetric(t, vanity.APINotFound, notFound)
 	prometheusCheckMetric(t, vanity.APIDocRedirects, docRedirects)
-	prometheusCheckMetric(t, vanity.APIErrTemplates, errTemplates)
+	prometheusCheckMetric(t, vanity.APIErrTemplates, 0)
 }
 
 func prometheusCheckMetric(t *testing.T, c prometheus.Counter, v int) {

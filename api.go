@@ -23,13 +23,16 @@ import (
 )
 
 var (
-	// ErrAlreadyClosed is returned if a Backend implementation is already closed.
+	// ErrAlreadyClosed is the error that a Backend returns when the caller
+	// already closed the Backend.
 	ErrAlreadyClosed = fmt.Errorf("already closed")
 
-	// ErrNotFound is returned if the import path cannot MockBackend found.
+	// ErrNotFound is the error that a Backend returns when the Backend cannot
+	// find the import path.
 	ErrNotFound = fmt.Errorf("not found")
 
-	// ErrNotSupported is returned if the Backend method is not supported by the implementation.
+	// ErrNotSupported is the error that a Backend returns when the Backend does
+	// not support the method.
 	ErrNotSupported = fmt.Errorf("not supported")
 )
 
@@ -74,14 +77,9 @@ func (f ConsumerFunc) OnEntry(context context.Context, importPath, vcs, vcsPath 
 	f(context, importPath, vcs, vcsPath)
 }
 
-var (
-	// log is error log.
-	logger Logger
-)
-
-func init() {
-	logger = LoggerFunc(func(format string, v ...interface{}) {})
-}
+// logger is the error log of this package. The default logger discards every
+// message.
+var logger Logger = LoggerFunc(func(format string, v ...interface{}) {})
 
 // Logger describes functions available for logging purposes.
 type Logger interface {

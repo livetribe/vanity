@@ -18,7 +18,6 @@ package toml
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"strings"
 	"sync"
@@ -118,7 +117,7 @@ import_path = "l7e.io/three"
 vcs = "git"
 vcs_path = "https://github.com/livetribe/three"
 `)
-			tmpfile, err := ioutil.TempFile("", "toml")
+			tmpfile, err := os.CreateTemp("", "toml")
 			So(err, ShouldBeNil)
 
 			defer func() {

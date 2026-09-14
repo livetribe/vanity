@@ -19,6 +19,7 @@ package datastore // import "l7e.io/vanity/pkg/gcp/datastore"
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"cloud.google.com/go/datastore"
@@ -54,17 +55,6 @@ func NewClient(projectID string, opts ...option.ClientOption) (vanity.Backend, e
 	}, nil
 }
 
-func (d *datastoreClient) checkClosed() error {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-
-	if d.client == nil {
-		return vanity.ErrAlreadyClosed
-	}
-
-	return nil
-}
-
 func (d *datastoreClient) Healthz(ctx context.Context) error {
 	return d.List(ctx, nil)
 }
@@ -93,7 +83,7 @@ func (d *datastoreClient) Get(ctx context.Context, importPath string) (vcs, vcsP
 	var e Entry
 
 	if err := d.client.Get(ctx, key, &e); err != nil {
-		if err == datastore.ErrNoSuchEntity {
+		if errors.Is(err, datastore.ErrNoSuchEntity) {
 			return "", "", vanity.ErrNotFound
 		}
 
@@ -166,6 +156,17 @@ func (d *datastoreClient) List(ctx context.Context, consumer vanity.Consumer) er
 		}
 
 		consumer.OnEntry(ctx, e.ImportPath, e.Vcs, e.VcsRoot)
+	}
+
+	return nil
+}
+
+func (d *datastoreClient) checkClosed() error {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	if d.client == nil {
+		return vanity.ErrAlreadyClosed
 	}
 
 	return nil

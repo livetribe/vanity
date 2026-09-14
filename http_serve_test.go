@@ -18,7 +18,7 @@ package vanity_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -38,13 +38,13 @@ func TestHandler_ServeHTTP_put(t *testing.T) {
 	h := vanity.NewVanityHandler(&apitest.MockBackend{})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("PUT", "https://a.com", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "PUT", "https://a.com", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
 
-	prometheusCheck(t, 0, 0, 0, 0, 0)
+	prometheusCheck(t, 0, 0, 0, 0)
 }
 
 func TestHandler_ServeHTTP_get_no_go_get(t *testing.T) {
@@ -53,18 +53,36 @@ func TestHandler_ServeHTTP_get_no_go_get(t *testing.T) {
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "https://a.com/b", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	match, err := regexp.Match(`https://pkg\.go\.dev/a\.com/b`, body)
 	assert.NoError(t, err)
 	assert.True(t, match, string(body))
 
-	prometheusCheck(t, 1, 0, 0, 1, 0)
+	prometheusCheck(t, 1, 0, 0, 1)
+}
+
+func TestHandler_ServeHTTP_get_no_go_get_custom_doc_url(t *testing.T) {
+	prometheusReset()
+
+	backend := &apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}}
+	h := vanity.NewVanityHandler(backend).(*vanity.Handler)
+	h.DocURL = "https://godoc.org/"
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b", http.NoBody)
+	h.ServeHTTP(w, r)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
+	assert.Equal(t, "https://godoc.org/a.com/b", resp.Header.Get("Location"))
+
+	prometheusCheck(t, 1, 0, 0, 1)
 }
 
 func TestHandler_ServeHTTP_get_not_found(t *testing.T) {
@@ -73,13 +91,13 @@ func TestHandler_ServeHTTP_get_not_found(t *testing.T) {
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "https://a.com/z", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/z", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 
-	prometheusCheck(t, 1, 0, 1, 0, 0)
+	prometheusCheck(t, 1, 0, 1, 0)
 }
 
 func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
@@ -88,13 +106,13 @@ func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Healthy: errNotHealthy})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "https://a.com/z", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/z", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 
-	prometheusCheck(t, 1, 1, 0, 0, 0)
+	prometheusCheck(t, 1, 1, 0, 0)
 }
 
 func TestHandler_ServeHTTP_get(t *testing.T) {
@@ -113,16 +131,16 @@ func TestHandler_ServeHTTP_get(t *testing.T) {
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "https://a.com/b?go-get=1", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b?go-get=1", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(body))
 
-	prometheusCheck(t, 1, 0, 0, 0, 0)
+	prometheusCheck(t, 1, 0, 0, 0)
 }
 
 func TestHandler_ServeHTTP_get_extendedPath(t *testing.T) {
@@ -141,14 +159,14 @@ func TestHandler_ServeHTTP_get_extendedPath(t *testing.T) {
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "https://a.com/b/v1?go-get=1", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b/v1?go-get=1", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(body))
 
-	prometheusCheck(t, 1, 0, 0, 0, 0)
+	prometheusCheck(t, 1, 0, 0, 0)
 }

@@ -55,11 +55,13 @@ func init() { //nolint:gochecknoinits
 	viper.RegisterAlias(database, "spanner.database")
 }
 
+const commandDescription = "Use GCP Spanner backend for a vanity store"
+
 // Command is the vanity sub-command for a GCP Spanner backend.
 var Command = &cobra.Command{
 	Use:   "spanner",
-	Short: "Use GCP Spanner backend for a vanity store",
-	Long:  "Use GCP Spanner backend for a vanity store",
+	Short: commandDescription,
+	Long:  commandDescription,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		glog.V(log.Debug).Infoln("Set backend w/ spanner")
 		err := viper.BindPFlags(cmd.Flags())

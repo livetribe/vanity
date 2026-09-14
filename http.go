@@ -19,6 +19,7 @@ package vanity
 import (
 	"bytes"
 	"context"
+	"errors"
 	"html/template"
 	"net/http"
 	"strings"
@@ -31,9 +32,19 @@ import (
 const (
 	xForwardedHost = "X-Forwarded-Host"
 
-	// DefaultDocURL is the default Go doc URL.
-	// It can MockBackend replaced with https://https://godoc.org/.
+	// DefaultDocURL is the documentation site that a Handler uses when the
+	// caller does not set Handler.DocURL.
 	DefaultDocURL = "https://pkg.go.dev/"
+
+	// DefaultDuration is the timeout that a Handler uses for a Backend call
+	// when the caller does not set Handler.Duration.
+	DefaultDuration = 5 * time.Second
+
+	metricNamespace = "vanity"
+	metricSubsystem = "api"
+
+	contentTypeHeader = "Content-Type"
+	htmlContentType   = "text/html; charset=utf-8"
 )
 
 type data struct {
@@ -47,7 +58,8 @@ var tmpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
   <meta name="go-import" content="{{.ImportRoot}} {{.VCS}} {{.VCSRoot}}">
-  <meta name="go-source" content="{{.ImportRoot}} {{.VCSRoot}} {{.VCSRoot}}/tree/master{/dir} {{.VCSRoot}}/blob/master{/dir}/{file}#L{line}">
+  <meta name="go-source" content="{{.ImportRoot}} {{.VCSRoot}} ` +
+	`{{.VCSRoot}}/tree/master{/dir} {{.VCSRoot}}/blob/master{/dir}/{file}#L{line}">
 </head>
 </html>
 `))
@@ -55,48 +67,48 @@ var tmpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 var (
 	// APICalls is a Prometheus counter that tracks the total vanity Backend calls.
 	APICalls = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "vanity",
-		Subsystem: "api",
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
 		Name:      "calls_total",
 		Help:      "The total vanity Backend calls",
 	})
 
 	// APIErrors is a Prometheus counter that tracks the total vanity Backend errors.
 	APIErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "vanity",
-		Subsystem: "api",
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
 		Name:      "errors_total",
 		Help:      "The total vanity Backend errors",
 	})
 
 	// APINotFound is a Prometheus counter that tracks the total vanity Backend not found calls.
 	APINotFound = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "vanity",
-		Subsystem: "api",
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
 		Name:      "not_found_total",
 		Help:      "The total vanity Backend not found calls",
 	})
 
 	// APIDocRedirects is a Prometheus counter that tracks the total vanity Backend doc redirects.
 	APIDocRedirects = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "vanity",
-		Subsystem: "api",
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
 		Name:      "doc_total",
 		Help:      "The total vanity Backend doc redirects",
 	})
 
 	// APIErrTemplates is a Prometheus counter that tracks the total templating errors.
 	APIErrTemplates = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "vanity",
-		Subsystem: "api",
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
 		Name:      "error_templates_total",
 		Help:      "The total templating errors",
 	})
 
 	// SummaryVec is a Prometheus histogram to track the Backend duration in seconds.
 	SummaryVec = promauto.NewHistogram(prometheus.HistogramOpts{
-		Namespace: "vanity",
-		Subsystem: "api",
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
 		Name:      "duration_seconds",
 		Help:      "The Backend duration in seconds",
 	})
@@ -107,7 +119,8 @@ var (
 type Handler struct {
 	api Backend
 
-	// DocURL is the base URL browsers are redirected to - default is https://pkg.go.dev/
+	// DocURL is the base URL that the Handler redirects a browser to.
+	// The Handler uses DefaultDocURL when DocURL is empty.
 	DocURL string
 
 	// Duration is the timeout duration for the calls to the backend implementation.
@@ -121,12 +134,11 @@ func NewVanityHandler(api Backend) http.Handler {
 	return &Handler{
 		api:      api,
 		DocURL:   DefaultDocURL,
-		Duration: 5 * time.Second, // nolint
+		Duration: DefaultDuration,
 	}
 }
 
 func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-
 	if r.Method != http.MethodGet {
 		status := http.StatusMethodNotAllowed
 		http.Error(w, http.StatusText(status), status)
@@ -136,7 +148,8 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	APICalls.Inc()
 
-	ctx, _ := context.WithTimeout(r.Context(), s.Duration) // nolint
+	ctx, cancel := context.WithTimeout(r.Context(), s.Duration)
+	defer cancel()
 
 	root := r.URL.Path
 	paths := strings.FieldsFunc(root, func(c rune) bool { return c == '/' })
@@ -148,7 +161,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vcs, repoRoot, err := s.timedGet(ctx, importPath)
 	if err != nil {
-		if err == ErrNotFound {
+		if errors.Is(err, ErrNotFound) {
 			APINotFound.Inc()
 			http.NotFound(w, r)
 		} else {
@@ -164,8 +177,8 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.FormValue("go-get") != "1" {
 		APIDocRedirects.Inc()
-		url := "https://pkg.go.dev/" + importPath
-		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+		url := s.docURL() + importPath
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect) //nolint:gosec
 
 		return
 	}
@@ -179,17 +192,29 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set(contentTypeHeader, htmlContentType)
 	w.Header().Set("Cache-Control", "public, max-age=300")
 
-	_, err = w.Write(body)
+	_, err = w.Write(body) //nolint:gosec
 	if err != nil {
 		logger.Printf("Error writing body for %s: %s", importPath, err)
 	}
 }
 
+func (s *Handler) docURL() string {
+	if s.DocURL == "" {
+		return DefaultDocURL
+	}
+
+	return s.DocURL
+}
+
 func (s *Handler) timedGet(ctx context.Context, importPath string) (vcs, vcsPath string, err error) {
 	start := time.Now()
-	defer SummaryVec.Observe(time.Since(start).Seconds())
+	defer func() {
+		elapsed := time.Since(start)
+		SummaryVec.Observe(elapsed.Seconds())
+	}()
 
 	vcs, vcsPath, err = s.api.Get(ctx, importPath)
 

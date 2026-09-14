@@ -33,12 +33,14 @@ import (
 
 var outputJSON bool
 
+const listDescription = "List vanity URLs"
+
 func init() { //nolint:gochecknoinits
 	helpers.AddCommand(func() *cobra.Command {
 		cmd := &cobra.Command{
 			Use:   "list",
-			Short: "List vanity URLs",
-			Long:  "List vanity URLs",
+			Short: listDescription,
+			Long:  listDescription,
 			Args:  cobra.NoArgs,
 			Run:   listCmd,
 		}

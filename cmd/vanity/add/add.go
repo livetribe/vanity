@@ -28,13 +28,15 @@ import (
 	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
+const addDescription = "Add vanity URL"
+
 func init() { //nolint:gochecknoinits
 	helpers.AddCommand(func() *cobra.Command {
 		return &cobra.Command{
 			Use:   "add <importPath> <vcs> <vcsPath>",
-			Short: "Add vanity URL",
-			Long:  "Add vanity URL",
-			Args:  cobra.ExactArgs(3), // nolint
+			Short: addDescription,
+			Long:  addDescription,
+			Args:  cobra.ExactArgs(3), //nolint:mnd
 			Run:   addCmd,
 		}
 	})

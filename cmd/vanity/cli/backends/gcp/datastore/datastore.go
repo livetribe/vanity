@@ -51,11 +51,13 @@ func init() { //nolint:gochecknoinits
 	viper.RegisterAlias(projectID, "datastore.project-id")
 }
 
+const commandDescription = "Use GCP Datastore backend for a vanity store"
+
 // Command is the vanity sub-command for a GCP Datastore backend.
 var Command = &cobra.Command{
 	Use:   "datastore",
-	Short: "Use GCP Datastore backend for a vanity store",
-	Long:  "Use GCP Datastore backend for a vanity store",
+	Short: commandDescription,
+	Long:  commandDescription,
 	Args:  cobra.NoArgs,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		glog.V(log.Debug).Infoln("Set backend w/ datastore")

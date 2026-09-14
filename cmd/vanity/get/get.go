@@ -34,12 +34,14 @@ import (
 
 var outputJSON bool
 
+const getDescription = "Get vanity URL"
+
 func init() { //nolint:gochecknoinits
 	helpers.AddCommand(func() *cobra.Command {
 		cmd := &cobra.Command{
 			Use:   "get <importPath>",
-			Short: "Get vanity URL",
-			Long:  "Get vanity URL",
+			Short: getDescription,
+			Long:  getDescription,
 			Args:  cobra.ExactArgs(1),
 			Run:   getCmd,
 		}

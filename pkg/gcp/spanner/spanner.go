@@ -19,6 +19,7 @@ package spanner // import "l7e.io/vanity/pkg/gcp/spanner"
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -61,17 +62,6 @@ func NewClient(ctx context.Context, database string, opts ...BackendOption) (api
 		table:  s.table,
 		client: dataClient,
 	}, nil
-}
-
-func (s *spannerClient) checkClosed() error {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	if s.client == nil {
-		return vanity.ErrAlreadyClosed
-	}
-
-	return nil
 }
 
 func (s *spannerClient) Close() error {
@@ -168,7 +158,7 @@ func (s *spannerClient) List(ctx context.Context, consumer vanity.Consumer) erro
 		row, err := iter.Next()
 
 		switch {
-		case err == iterator.Done:
+		case errors.Is(err, iterator.Done):
 			return nil
 		case err != nil:
 			return err
@@ -184,6 +174,17 @@ func (s *spannerClient) List(ctx context.Context, consumer vanity.Consumer) erro
 	}
 }
 
+func (s *spannerClient) checkClosed() error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	if s.client == nil {
+		return vanity.ErrAlreadyClosed
+	}
+
+	return nil
+}
+
 func (s *spannerClient) sql() string {
-	return fmt.Sprintf("SELECT %s, %s, %s FROM %s", importPathColumn, vcsColumn, vcsPathColumn, s.table) // nolint:gosec
+	return fmt.Sprintf("SELECT %s, %s, %s FROM %s", importPathColumn, vcsColumn, vcsPathColumn, s.table)
 }

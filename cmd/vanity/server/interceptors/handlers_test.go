@@ -53,7 +53,7 @@ func TestWrapHandler(t *testing.T) {
 	}))
 
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "http://a.com", nil)
+	r := httptest.NewRequestWithContext(t.Context(), "GET", "http://a.com", http.NoBody)
 	h.ServeHTTP(w, r)
 
 	assert.Equal(t, []string{"a", "b", "c", "d"}, values)

@@ -69,15 +69,7 @@ func (s *inMemory) Close() error {
 	return nil
 }
 
-func (s *inMemory) check() error {
-	// must not hold a lock
-	if s.closed {
-		return vanity.ErrAlreadyClosed
-	}
-	return nil
-}
-
-func (s *inMemory) Get(_ context.Context, importPath string) (string, string, error) {
+func (s *inMemory) Get(_ context.Context, importPath string) (vcs, vcsPath string, err error) {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
@@ -89,6 +81,7 @@ func (s *inMemory) Get(_ context.Context, importPath string) (string, string, er
 	if !found {
 		return "", "", vanity.ErrNotFound
 	}
+
 	return e.vcs, e.vcsPath, nil
 }
 
@@ -151,5 +144,15 @@ func (s *inMemory) List(ctx context.Context, consumer vanity.Consumer) error {
 }
 
 func (s *inMemory) Healthz(_ context.Context) error {
+	return nil
+}
+
+// check reports whether the caller closed this Backend. The caller must not
+// hold the lock.
+func (s *inMemory) check() error {
+	if s.closed {
+		return vanity.ErrAlreadyClosed
+	}
+
 	return nil
 }

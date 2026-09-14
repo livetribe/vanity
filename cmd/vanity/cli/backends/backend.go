@@ -31,11 +31,7 @@ the backend sub-commands of the vanity root command, cli.RootCmd.
 Sub-commands of backend sub-commands, e.g. add and list, can use this to perform
 their functionality.
 */
-var backend vanity.Backend
-
-func init() {
-	backend = &doNothing{}
-}
+var backend vanity.Backend = &doNothing{}
 
 func Set(be vanity.Backend) {
 	if be != nil {
@@ -54,7 +50,7 @@ func (s *doNothing) Close() error {
 	return nil
 }
 
-func (s *doNothing) Get(_ context.Context, _ string) (string, string, error) {
+func (s *doNothing) Get(_ context.Context, _ string) (vcs, vcsPath string, err error) {
 	return "", "", vanity.ErrNotFound
 }
 

@@ -28,11 +28,16 @@ import (
 	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
+// checkTimeout is the timeout for a Backend health check.
+const checkTimeout = 5 * time.Second
+
 // newHandlerCheck creates a handler instance that can be used for a healthz checkpoint.
 func newHandlerCheck(backend vanity.Backend, kind string) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			ctx, _ := context.WithTimeout(r.Context(), 5*time.Second) // nolint
+			ctx, cancel := context.WithTimeout(r.Context(), checkTimeout)
+			defer cancel()
+
 			err := backend.Healthz(ctx)
 			if err != nil {
 				glog.Error(err)

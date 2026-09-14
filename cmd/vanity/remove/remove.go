@@ -28,12 +28,14 @@ import (
 	"l7e.io/vanity/cmd/vanity/cli/log"
 )
 
+const removeDescription = "Remove vanity URL"
+
 func init() { //nolint:gochecknoinits
 	helpers.AddCommand(func() *cobra.Command {
 		return &cobra.Command{
 			Use:   "remove <importPath>",
-			Short: "Remove vanity URL",
-			Long:  "Remove vanity URL",
+			Short: removeDescription,
+			Long:  removeDescription,
 			Args:  cobra.ExactArgs(1),
 			Run:   removeCmd,
 		}

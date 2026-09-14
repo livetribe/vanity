@@ -18,8 +18,8 @@ package cli_test
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -58,7 +58,9 @@ func setupViper(dir string) error {
 	viper.AddConfigPath(dir)
 
 	err := viper.ReadInConfig()
-	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
+
+	var cnf viper.ConfigFileNotFoundError
+	if errors.As(err, &cnf) {
 		return nil
 	}
 
@@ -73,9 +75,9 @@ func setupConfigFile(dir string) error {
 	defer f.Close()
 
 	w := bufio.NewWriter(f)
-	_, err = w.WriteString(fmt.Sprintf(`[google-api]
+	_, err = fmt.Fprintf(w, `[google-api]
 key = "%s"
-`, cfgFileValue))
+`, cfgFileValue)
 	if err != nil {
 		return err
 	}
@@ -130,7 +132,7 @@ func TestFlags_viaEnvVar(t *testing.T) {
 }
 
 func TestFlags_viaConfigFile(t *testing.T) {
-	dir, err := ioutil.TempDir("", "prefix")
+	dir, err := os.MkdirTemp("", "prefix")
 	assert.NoError(t, err)
 	defer os.Remove(dir)
 
@@ -157,7 +159,7 @@ func TestFlags_viaConfigFile(t *testing.T) {
 
 func TestFlags_envVarTakesPrecedence(t *testing.T) {
 	expected := keyValue
-	dir, err := ioutil.TempDir("", "prefix")
+	dir, err := os.MkdirTemp("", "prefix")
 	assert.NoError(t, err)
 	defer os.Remove(dir)
 

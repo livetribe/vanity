@@ -21,10 +21,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const rootDescription = "A go vanity server"
+
 // RootCmd is the root cobra command for vanity.
 var RootCmd = &cobra.Command{
 	Use:     "vanity",
-	Short:   "A go vanity server",
-	Long:    `A go vanity server`,
+	Short:   rootDescription,
+	Long:    rootDescription,
 	Version: getVersion(),
 }

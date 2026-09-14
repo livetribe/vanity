@@ -42,7 +42,7 @@ func Flags(cmd *cobra.Command) *FlagSet {
 // environmental variable.
 func (f *FlagSet) GetValue(flagName string) (value string, found bool) {
 	value, err := f.GetString(flagName)
-	if err == nil && len(value) > 0 {
+	if err == nil && value != "" {
 		return value, true
 	}
 

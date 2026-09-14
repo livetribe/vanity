@@ -17,6 +17,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"strings"
 
@@ -70,7 +71,9 @@ func setupViper() error {
 	viper.AutomaticEnv()
 
 	err := viper.ReadInConfig()
-	if cnf, ok := err.(viper.ConfigFileNotFoundError); ok {
+
+	var cnf viper.ConfigFileNotFoundError
+	if errors.As(err, &cnf) {
 		glog.V(log.Debug).Info(cnf.Error())
 
 		return nil

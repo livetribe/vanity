@@ -16,27 +16,35 @@
  */
 
 /*
-Package vanity contains an HTTP Handler that provides go vanity URL support.
+Package vanity contains an HTTP handler that serves Go vanity import paths.
 
-See https://cloud.google.com/spanner/docs/getting-started/go/ for an
-introduction to Cloud Spanner and additional help on using this API.
+The handler makes an import path from the host of the request and the first
+element of the request path. It gets the version control system and the
+repository root for that import path from a Backend.
 
-See https://godoc.org/cloud.google.com/go for authentication, timeouts,
-connection pooling and similar aspects of this package.
+A request with the query parameter go-get=1 receives an HTML document that
+contains go-import and go-source meta tags. Every other request receives a
+temporary redirect to the Go documentation site.
 
-# Creating a Client
+# Creating a handler
 
-To start working with this package, create a client that refers to the database
-of interest:
+Give NewVanityHandler a Backend:
 
-	ctx := context.Background()
-	client, err := spanner.NewClient(ctx, "projects/P/instances/I/databases/D")
-	if err != nil {
-	    // TODO: Handle error.
-	}
-	defer client.Close()
+	backend := memory.NewInMemoryAPI()
+	defer backend.Close()
 
-Remember to close the client after use to free up the sessions in the session
-pool.
+	http.Handle("/", vanity.NewVanityHandler(backend))
+
+The packages under pkg supply Backend implementations for an in-memory store,
+a TOML file, Google Cloud Datastore, and Google Cloud Spanner.
+
+# Metrics and logs
+
+This package exports Prometheus collectors. They count the calls to the
+Backend, the errors, the not-found results, the documentation redirects, and
+the template errors. SummaryVec records the duration of each Backend call.
+
+The handler writes messages to a Logger. The default Logger discards the
+messages. Call SetLogger to replace it.
 */
 package vanity // import "l7e.io/vanity"

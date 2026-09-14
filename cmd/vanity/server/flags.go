@@ -19,6 +19,7 @@ package server
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -53,15 +54,24 @@ const (
 	healthz = "healthz"
 	readyz  = "readyz"
 	metrics = "prometheus"
+
+	defaultPort        = 8080
+	defaultHealthzPort = 8081
+	defaultReadyzPort  = 8082
+	defaultMetricsPort = 9100
+
+	// readHeaderTimeout bounds the time that a client can take to send the
+	// request headers.
+	readHeaderTimeout = 10 * time.Second
 )
 
 func initFlags(cmd *cobra.Command) {
 	flags := cmd.PersistentFlags()
-	flags.Int16P(port, "p", 8080, "port on which the server will listen")
+	flags.Int16P(port, "p", defaultPort, "port on which the server will listen")
 	flags.StringP(bind, "", "127.0.0.1", "interface to which the server will bind")
-	flags.Int16P(healthz, "", 8081, "port on which application health checks will listen")
-	flags.Int16P(readyz, "", 8082, "port on which application ready checks will listen")
-	flags.Int16P(metrics, "", 9100, "port on which the Prometheus will listen")
+	flags.Int16P(healthz, "", defaultHealthzPort, "port on which application health checks will listen")
+	flags.Int16P(readyz, "", defaultReadyzPort, "port on which application ready checks will listen")
+	flags.Int16P(metrics, "", defaultMetricsPort, "port on which the Prometheus will listen")
 }
 
 type helper struct {
@@ -84,7 +94,7 @@ func (h *helper) getHTTPServer(api vanity.Backend) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle("/", interceptors.WrapHandler(vanity.NewVanityHandler(api)))
 
-	return &http.Server{Addr: addr, Handler: mux}
+	return &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: readHeaderTimeout}
 }
 
 // getHealthz returns an http.Server for healthz configured by the helper.
@@ -99,7 +109,7 @@ func (h *helper) getHealthz(handler http.Handler) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle("/healthz", handler)
 
-	return &http.Server{Addr: addr, Handler: mux}
+	return &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: readHeaderTimeout}
 }
 
 // getReadyz returns an http.Server for readyz configured by the helper.
@@ -114,7 +124,7 @@ func (h *helper) getReadyz(handler http.Handler) *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle("/readyz", handler)
 
-	return &http.Server{Addr: addr, Handler: mux}
+	return &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: readHeaderTimeout}
 }
 
 // getMetrics returns an http.Server for readyz configured by the helper.
@@ -129,5 +139,5 @@ func (h *helper) getMetrics() *http.Server {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
-	return &http.Server{Addr: addr, Handler: mux}
+	return &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: readHeaderTimeout}
 }
