@@ -30,7 +30,7 @@ import (
 	"l7e.io/vanity"
 	"l7e.io/vanity/cmd/vanity/cli/backends/helpers"
 	"l7e.io/vanity/cmd/vanity/server/interceptors"
-	"l7e.io/vanity/internal/logging"
+	"l7e.io/vanity/internal/mw"
 )
 
 func init() { //nolint:gochecknoinits
@@ -92,7 +92,9 @@ func (h *helper) getHTTPServer(api vanity.Backend) *http.Server {
 
 	slog.Info("Configured the vanity port", slog.String("address", addr))
 
-	handler := logging.Middleware(vanity.NewVanityHandler(api))
+	vanityHandler := vanity.NewVanityHandler(api)
+	meteredHandler := mw.WithPrometheus(vanityHandler)
+	handler := mw.WithLogger(meteredHandler)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", interceptors.WrapHandler(handler))

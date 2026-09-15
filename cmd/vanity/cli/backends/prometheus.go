@@ -18,6 +18,7 @@ package backends
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -31,13 +32,41 @@ const (
 	metricSubsystem = "api"
 )
 
-// durationHistogram records the duration of each Backend.Get call in seconds.
-var durationHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
-	Namespace: metricNamespace,
-	Subsystem: metricSubsystem,
-	Name:      "duration_seconds",
-	Help:      "The Backend duration in seconds",
-})
+var (
+	// durationHistogram records the duration of each Backend.Get call in seconds.
+	durationHistogram = promauto.NewHistogram(prometheus.HistogramOpts{
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
+		Name:      "duration_seconds",
+		Help:      "The Backend duration in seconds",
+	})
+
+	// callCounter counts each Backend.Get call.
+	callCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
+		Name:      "calls_total",
+		Help:      "The total vanity Backend calls",
+	})
+
+	// errorCounter counts each Backend.Get call that fails for a reason other
+	// than vanity.ErrNotFound.
+	errorCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
+		Name:      "errors_total",
+		Help:      "The total vanity Backend errors",
+	})
+
+	// notFoundCounter counts each Backend.Get call that fails with
+	// vanity.ErrNotFound.
+	notFoundCounter = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: metricNamespace,
+		Subsystem: metricSubsystem,
+		Name:      "not_found_total",
+		Help:      "The total vanity Backend not found calls",
+	})
+)
 
 type prometheusWrapper struct {
 	backend vanity.Backend
@@ -47,7 +76,9 @@ var _ vanity.Backend = (*prometheusWrapper)(nil)
 
 // WrapWithPrometheus returns a vanity.Backend that sends all calls to backend.
 // The returned Backend also records the duration of each Get call in the
-// vanity_api_duration_seconds histogram.
+// vanity_api_duration_seconds histogram, and counts each Get call in the
+// vanity_api_calls_total, vanity_api_errors_total and
+// vanity_api_not_found_total counters.
 func WrapWithPrometheus(backend vanity.Backend) vanity.Backend {
 	return &prometheusWrapper{backend: backend}
 }
@@ -63,7 +94,18 @@ func (w *prometheusWrapper) Get(ctx context.Context, importPath string) (vcs, vc
 		durationHistogram.Observe(elapsed.Seconds())
 	}()
 
-	return w.backend.Get(ctx, importPath)
+	callCounter.Inc()
+
+	vcs, vcsPath, err = w.backend.Get(ctx, importPath)
+	if err != nil {
+		if errors.Is(err, vanity.ErrNotFound) {
+			notFoundCounter.Inc()
+		} else {
+			errorCounter.Inc()
+		}
+	}
+
+	return vcs, vcsPath, err
 }
 
 func (w *prometheusWrapper) Add(ctx context.Context, importPath, vcs, vcsPath string) error {

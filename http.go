@@ -26,10 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-
-	"l7e.io/vanity/internal/logging"
+	"l7e.io/vanity/internal/mw"
 )
 
 const (
@@ -42,9 +39,6 @@ const (
 	// DefaultDuration is the timeout that a Handler uses for a Backend call
 	// when the caller does not set Handler.Duration.
 	DefaultDuration = 5 * time.Second
-
-	metricNamespace = "vanity"
-	metricSubsystem = "api"
 
 	contentTypeHeader = "Content-Type"
 	htmlContentType   = "text/html; charset=utf-8"
@@ -66,40 +60,6 @@ var tmpl = template.Must(template.New("main").Parse(`<!DOCTYPE html>
 </head>
 </html>
 `))
-
-var (
-	// APICalls is a Prometheus counter that tracks the total vanity Backend calls.
-	APICalls = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: metricNamespace,
-		Subsystem: metricSubsystem,
-		Name:      "calls_total",
-		Help:      "The total vanity Backend calls",
-	})
-
-	// APIErrors is a Prometheus counter that tracks the total vanity Backend errors.
-	APIErrors = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: metricNamespace,
-		Subsystem: metricSubsystem,
-		Name:      "errors_total",
-		Help:      "The total vanity Backend errors",
-	})
-
-	// APINotFound is a Prometheus counter that tracks the total vanity Backend not found calls.
-	APINotFound = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: metricNamespace,
-		Subsystem: metricSubsystem,
-		Name:      "not_found_total",
-		Help:      "The total vanity Backend not found calls",
-	})
-
-	// APIDocRedirects is a Prometheus counter that tracks the total vanity Backend doc redirects.
-	APIDocRedirects = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: metricNamespace,
-		Subsystem: metricSubsystem,
-		Name:      "doc_total",
-		Help:      "The total vanity Backend doc redirects",
-	})
-)
 
 // Handler is a http.Handler that services vanity URLs using api
 // as a backend service.
@@ -133,9 +93,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger := logging.FromContext(r.Context())
-
-	APICalls.Inc()
+	logger := mw.FromContext(r.Context())
 
 	ctx, cancel := context.WithTimeout(r.Context(), s.Duration)
 	defer cancel()
@@ -151,12 +109,10 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vcs, repoRoot, err := s.api.Get(ctx, importPath)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			APINotFound.Inc()
 			http.NotFound(w, r)
 		} else {
 			logger.LogAttrs(ctx, slog.LevelError, "Unable to get the import path",
 				slog.String("importPath", importPath), slog.Any("error", err))
-			APIErrors.Inc()
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
@@ -166,7 +122,6 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vcsRoot := repoRoot + root
 
 	if r.FormValue("go-get") != "1" {
-		APIDocRedirects.Inc()
 		url := s.docURL() + importPath
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect) //nolint:gosec
 

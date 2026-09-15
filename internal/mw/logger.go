@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-// Package logging supplies an HTTP middleware that puts a request logger in
-// the request context.
-package logging
+package mw
 
 import (
 	"context"
@@ -38,8 +36,8 @@ func (w *statusResponseWriter) WriteHeader(code int) {
 	w.ResponseWriter.WriteHeader(code)
 }
 
-// Middleware initializes a request-scoped logger
-func Middleware(next http.Handler) http.Handler {
+// WithLogger initializes a request-scoped logger
+func WithLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

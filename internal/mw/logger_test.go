@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package logging
+package mw
 
 import (
 	"bytes"
@@ -57,7 +57,7 @@ func TestMiddleware_oneHTTPGroup(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b", http.NoBody)
-	Middleware(next).ServeHTTP(w, r)
+	WithLogger(next).ServeHTTP(w, r)
 
 	line := buf.String()
 
@@ -76,7 +76,7 @@ func TestMiddleware_requestLoggerInContext(t *testing.T) {
 
 	w := httptest.NewRecorder()
 	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b", http.NoBody)
-	Middleware(next).ServeHTTP(w, r)
+	WithLogger(next).ServeHTTP(w, r)
 
 	assert.Contains(t, buf.String(), `"msg":"handler ran"`)
 	assert.Contains(t, buf.String(), `"path":"/b"`)

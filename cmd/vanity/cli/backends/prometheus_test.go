@@ -21,6 +21,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -79,6 +81,29 @@ func (r *recorder) Healthz(_ context.Context) error {
 	r.called = "Healthz"
 
 	return errBackend
+}
+
+// getBackend is a vanity.Backend whose Get method returns err. A call to any
+// other method of getBackend causes a panic.
+type getBackend struct {
+	vanity.Backend
+
+	err error
+}
+
+func (b *getBackend) Get(_ context.Context, _ string) (vcs, vcsPath string, err error) {
+	return "git", "example.com/repo", b.err
+}
+
+// counterValue returns the current value of c.
+func counterValue(t *testing.T, c prometheus.Counter) float64 {
+	t.Helper()
+
+	m := &dto.Metric{}
+	err := c.Write(m)
+	require.NoError(t, err)
+
+	return m.Counter.GetValue()
 }
 
 func TestWrapWithPrometheus_Close(t *testing.T) {
@@ -149,4 +174,31 @@ func TestWrapWithPrometheus_Healthz(t *testing.T) {
 
 	require.ErrorIs(t, err, errBackend)
 	assert.Equal(t, "Healthz", be.called)
+}
+
+func TestWrapWithPrometheus_counters(t *testing.T) {
+	tests := []struct {
+		name             string
+		err              error
+		errors, notFound float64
+	}{
+		{name: "success", err: nil},
+		{name: "not found", err: vanity.ErrNotFound, notFound: 1},
+		{name: "error", err: errBackend, errors: 1},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			calls := counterValue(t, callCounter)
+			errs := counterValue(t, errorCounter)
+			notFound := counterValue(t, notFoundCounter)
+
+			w := WrapWithPrometheus(&getBackend{err: test.err})
+			_, _, _ = w.Get(t.Context(), "example.com/repo")
+
+			assert.Equal(t, float64(1), counterValue(t, callCounter)-calls)
+			assert.Equal(t, test.errors, counterValue(t, errorCounter)-errs)
+			assert.Equal(t, test.notFound, counterValue(t, notFoundCounter)-notFound)
+		})
+	}
 }

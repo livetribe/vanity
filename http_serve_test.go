@@ -55,8 +55,6 @@ func captureLog(t *testing.T) *bytes.Buffer {
 }
 
 func TestHandler_ServeHTTP_put(t *testing.T) {
-	prometheusReset()
-
 	h := vanity.NewVanityHandler(&apitest.MockBackend{})
 
 	w := httptest.NewRecorder()
@@ -65,13 +63,9 @@ func TestHandler_ServeHTTP_put(t *testing.T) {
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusMethodNotAllowed, resp.StatusCode)
-
-	prometheusCheck(t, 0, 0, 0, 0)
 }
 
 func TestHandler_ServeHTTP_get_no_go_get(t *testing.T) {
-	prometheusReset()
-
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
 	w := httptest.NewRecorder()
@@ -85,13 +79,9 @@ func TestHandler_ServeHTTP_get_no_go_get(t *testing.T) {
 	match, err := regexp.Match(`https://pkg\.go\.dev/a\.com/b`, body)
 	assert.NoError(t, err)
 	assert.True(t, match, string(body))
-
-	prometheusCheck(t, 1, 0, 0, 1)
 }
 
 func TestHandler_ServeHTTP_get_no_go_get_custom_doc_url(t *testing.T) {
-	prometheusReset()
-
 	backend := &apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}}
 	h := vanity.NewVanityHandler(backend).(*vanity.Handler)
 	h.DocURL = "https://godoc.org/"
@@ -103,13 +93,9 @@ func TestHandler_ServeHTTP_get_no_go_get_custom_doc_url(t *testing.T) {
 	resp := w.Result()
 	assert.Equal(t, http.StatusTemporaryRedirect, resp.StatusCode)
 	assert.Equal(t, "https://godoc.org/a.com/b", resp.Header.Get("Location"))
-
-	prometheusCheck(t, 1, 0, 0, 1)
 }
 
 func TestHandler_ServeHTTP_get_not_found(t *testing.T) {
-	prometheusReset()
-
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
 	w := httptest.NewRecorder()
@@ -118,13 +104,9 @@ func TestHandler_ServeHTTP_get_not_found(t *testing.T) {
 
 	resp := w.Result()
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-
-	prometheusCheck(t, 1, 0, 1, 0)
 }
 
 func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
-	prometheusReset()
-
 	buf := captureLog(t)
 
 	h := vanity.NewVanityHandler(&apitest.MockBackend{Healthy: errNotHealthy})
@@ -137,13 +119,9 @@ func TestHandler_ServeHTTP_not_healthy(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 	assert.Contains(t, buf.String(), "Unable to get the import path")
 	assert.Contains(t, buf.String(), "importPath=a.com/z")
-
-	prometheusCheck(t, 1, 1, 0, 0)
 }
 
 func TestHandler_ServeHTTP_get(t *testing.T) {
-	prometheusReset()
-
 	expected := `<!DOCTYPE html>
 <html>
 <head>
@@ -165,13 +143,9 @@ func TestHandler_ServeHTTP_get(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(body))
-
-	prometheusCheck(t, 1, 0, 0, 0)
 }
 
 func TestHandler_ServeHTTP_get_extendedPath(t *testing.T) {
-	prometheusReset()
-
 	expected := `<!DOCTYPE html>
 <html>
 <head>
@@ -193,6 +167,4 @@ func TestHandler_ServeHTTP_get_extendedPath(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	assert.Equal(t, expected, string(body))
-
-	prometheusCheck(t, 1, 0, 0, 0)
 }
