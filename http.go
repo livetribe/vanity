@@ -99,14 +99,6 @@ var (
 		Name:      "doc_total",
 		Help:      "The total vanity Backend doc redirects",
 	})
-
-	// APIErrTemplates is a Prometheus counter that tracks the total templating errors.
-	APIErrTemplates = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: metricNamespace,
-		Subsystem: metricSubsystem,
-		Name:      "error_templates_total",
-		Help:      "The total templating errors",
-	})
 )
 
 // Handler is a http.Handler that services vanity URLs using api
@@ -186,21 +178,12 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	logger.LogAttrs(ctx, slog.LevelDebug, "Making the document",
 		slog.String("importRoot", importRoot), slog.String("vcs", vcs), slog.String("vcsRoot", vcsRoot))
 
-	body, err := templatize(importRoot, vcs, vcsRoot)
-	if err != nil {
-		logger.LogAttrs(ctx, slog.LevelError, "Unable to make the document",
-			slog.String("importPath", importPath), slog.Any("error", err))
-		APIErrTemplates.Inc()
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
+	body := templatize(importRoot, vcs, vcsRoot)
 
 	w.Header().Set(contentTypeHeader, htmlContentType)
 	w.Header().Set("Cache-Control", "public, max-age=300")
 
-	_, err = w.Write(body) //nolint:gosec
-	if err != nil {
+	if _, err = w.Write(body); err != nil {
 		logger.LogAttrs(ctx, slog.LevelError, "Unable to write the body",
 			slog.String("importPath", importPath), slog.Any("error", err))
 	}
@@ -222,7 +205,7 @@ func host(r *http.Request) string {
 	return r.Header.Get(xForwardedHost)
 }
 
-func templatize(importRoot, vcs, vcsRoot string) ([]byte, error) {
+func templatize(importRoot, vcs, vcsRoot string) []byte {
 	d := &data{
 		ImportRoot: importRoot,
 		VCS:        vcs,
@@ -230,9 +213,8 @@ func templatize(importRoot, vcs, vcsRoot string) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, d); err != nil {
-		return nil, err
-	}
 
-	return buf.Bytes(), nil
+	_ = tmpl.Execute(&buf, d)
+
+	return buf.Bytes()
 }

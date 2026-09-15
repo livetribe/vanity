@@ -29,7 +29,6 @@ func TestTemplatize(t *testing.T) {
 </head>
 </html>
 `
-	body, err := templatize("a", "b", "c")
-	assert.NoError(t, err)
+	body := templatize("a", "b", "c")
 	assert.Equal(t, expected, string(body))
 }

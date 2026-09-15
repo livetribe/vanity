@@ -33,7 +33,6 @@ func prometheusReset() {
 	prometheusSnapshot(vanity.APIErrors)
 	prometheusSnapshot(vanity.APINotFound)
 	prometheusSnapshot(vanity.APIDocRedirects)
-	prometheusSnapshot(vanity.APIErrTemplates)
 }
 
 func prometheusSnapshot(c prometheus.Counter) {
@@ -47,7 +46,6 @@ func prometheusCheck(t *testing.T, calls, errors, notFound, docRedirects int) {
 	prometheusCheckMetric(t, vanity.APIErrors, errors)
 	prometheusCheckMetric(t, vanity.APINotFound, notFound)
 	prometheusCheckMetric(t, vanity.APIDocRedirects, docRedirects)
-	prometheusCheckMetric(t, vanity.APIErrTemplates, 0)
 }
 
 func prometheusCheckMetric(t *testing.T, c prometheus.Counter, v int) {
