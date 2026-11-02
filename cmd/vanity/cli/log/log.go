@@ -24,7 +24,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"m4o.io/gslog/core"
+	"m4o.io/gslog"
 	"m4o.io/gslog/stdout"
 )
 
@@ -61,7 +61,7 @@ var levels = map[string]slog.Level{
 // as the default slog handler. The handler writes each entry as one line of
 // JSON in the structured logging format that a Google logging agent reads.
 func Init(w io.Writer) {
-	handler := stdout.NewHandler(w, core.WithLogLeveler(level))
+	handler := stdout.NewHandler(w, gslog.WithLeveler(level))
 
 	slog.SetDefault(slog.New(handler))
 }
