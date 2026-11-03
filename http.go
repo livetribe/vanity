@@ -128,12 +128,10 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	importRoot := host(r) + r.URL.Path
-
 	logger.LogAttrs(ctx, slog.LevelDebug, "Making the document",
-		slog.String("importRoot", importRoot), slog.String("vcs", vcs), slog.String("vcsRoot", vcsRoot))
+		slog.String("importRoot", importPath), slog.String("vcs", vcs), slog.String("vcsRoot", vcsRoot))
 
-	body := templatize(importRoot, vcs, vcsRoot)
+	body := templatize(importPath, vcs, vcsRoot)
 
 	w.Header().Set(contentTypeHeader, htmlContentType)
 	w.Header().Set("Cache-Control", "public, max-age=300")

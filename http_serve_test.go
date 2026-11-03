@@ -145,26 +145,40 @@ func TestHandler_ServeHTTP_get(t *testing.T) {
 	assert.Equal(t, expected, string(body))
 }
 
-func TestHandler_ServeHTTP_get_extendedPath(t *testing.T) {
+func TestHandler_ServeHTTP_get_subPath(t *testing.T) {
 	expected := `<!DOCTYPE html>
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <meta name="go-import" content="a.com/b/v1 vcs vcsPath/b">
-  <meta name="go-source" content="a.com/b/v1 vcsPath/b vcsPath/b/tree/master{/dir} vcsPath/b/blob/master{/dir}/{file}#L{line}">
+  <meta name="go-import" content="a.com/b vcs vcsPath/b">
+  <meta name="go-source" content="a.com/b vcsPath/b vcsPath/b/tree/master{/dir} vcsPath/b/blob/master{/dir}/{file}#L{line}">
 </head>
 </html>
 `
 
-	h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
+	tests := []struct {
+		name string
+		url  string
+	}{
+		{name: "major version", url: "https://a.com/b/v2?go-get=1"},
+		{name: "package", url: "https://a.com/b/model?go-get=1"},
+		{name: "package of a major version", url: "https://a.com/b/v2/model?go-get=1"},
+		{name: "command", url: "https://a.com/b/v2/cmd/b?go-get=1"},
+	}
 
-	w := httptest.NewRecorder()
-	r := httptest.NewRequestWithContext(t.Context(), "GET", "https://a.com/b/v1?go-get=1", http.NoBody)
-	h.ServeHTTP(w, r)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			h := vanity.NewVanityHandler(&apitest.MockBackend{Urls: map[string][]string{"a.com/b": {"vcs", "vcsPath"}}})
 
-	resp := w.Result()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	body, err := io.ReadAll(resp.Body)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, string(body))
+			w := httptest.NewRecorder()
+			r := httptest.NewRequestWithContext(t.Context(), "GET", test.url, http.NoBody)
+			h.ServeHTTP(w, r)
+
+			resp := w.Result()
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			body, err := io.ReadAll(resp.Body)
+			assert.NoError(t, err)
+			assert.Equal(t, expected, string(body))
+		})
+	}
 }
